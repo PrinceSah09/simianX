@@ -1,0 +1,18 @@
+apiVersion: v2
+name: scalekart
+description: Production Helm chart for SimianX SRE Chaos & Telemetry Control Plane on Kubernetes / AWS EKS
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+icon: https://raw.githubusercontent.com/kubernetes/kubernetes/master/logo/logo.png
+keywords:
+  - sre
+  - kubernetes
+  - fast-api
+  - react
+  - prometheus
+  - aws-eks
+  - chaos-engineering
+maintainers:
+  - name: SimianX Engineering
+    email: devops@simianx.io

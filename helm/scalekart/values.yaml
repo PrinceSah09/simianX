@@ -1,0 +1,62 @@
+# Default values for SimianX.
+# This is a YAML-formatted file.
+
+global:
+  namespace: simianx
+
+backend:
+  replicaCount: 2
+  image:
+    repository: simianx-backend
+    pullPolicy: IfNotPresent
+    tag: "latest"
+  service:
+    type: ClusterIP
+    port: 8000
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  env:
+    environment: "production"
+    port: "8000"
+    targetServiceUrl: "http://simianx-backend:8000"
+    prometheusUrl: "http://prometheus:9090"
+
+prometheus:
+  enabled: true
+  image:
+    repository: prom/prometheus
+    pullPolicy: IfNotPresent
+    tag: "v2.54.1"
+  service:
+    type: NodePort
+    port: 9090
+    nodePort: 30090
+  scrapeInterval: "2s"
+  retention: "2h"
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+ingress:
+  enabled: false
+  className: "alb"
+  annotations: {}
+    # kubernetes.io/ingress.class: alb
+    # alb.ingress.kubernetes.io/scheme: internet-facing
+    # alb.ingress.kubernetes.io/target-type: ip
+  hosts:
+    - host: scalekart.internal
+      paths:
+        - path: /
+          pathType: Prefix
+          service: backend
+  tls: []

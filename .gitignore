@@ -1,0 +1,57 @@
+# ScaleKart — .gitignore
+
+# Python virtual environment
+.venv/
+venv/
+env/
+
+# Byte-compiled Python files
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+*.egg
+
+# Environment variable files (NEVER commit real secrets)
+.env
+.env.local
+.env.*.local
+
+# Node / Frontend
+node_modules/
+dist/
+
+# Pytest cache
+.pytest_cache/
+
+# Ruff cache
+.ruff_cache/
+
+# macOS
+.DS_Store
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+tfplan
+plan_output.txt
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc

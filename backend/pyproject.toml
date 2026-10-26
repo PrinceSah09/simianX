@@ -1,0 +1,39 @@
+[project]
+name = "simianx"
+version = "0.1.0"
+description = "SimianX — Cloud-Native SRE Chaos Engineering & Full-Stack Telemetry Control Plane (Backend API)"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi[standard]>=0.115",
+    "uvicorn[standard]>=0.32",
+    "pydantic-settings>=2.6",
+    "prometheus-client>=0.21.0",
+    "httpx>=0.27",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8",
+    "httpx>=0.27",
+    "ruff>=0.8",
+]
+
+# ---------------------------------------------------------------------------
+# Ruff — linter and formatter (replaces flake8 + black in one tool)
+# ---------------------------------------------------------------------------
+[tool.ruff]
+target-version = "py312"
+line-length = 88
+
+[tool.ruff.lint]
+# E/W = pycodestyle, F = pyflakes, I = isort, UP = pyupgrade, B = bugbear
+select = ["E", "W", "F", "I", "UP", "B"]
+# B008: Depends() in default args is the intended FastAPI DI pattern.
+# E501: Line length is managed by ruff format; long PromQL queries are permitted.
+ignore = ["B008", "E501"]
+
+# ---------------------------------------------------------------------------
+# Pytest — test runner configuration
+# ---------------------------------------------------------------------------
+[tool.pytest.ini_options]
+testpaths = ["tests"]

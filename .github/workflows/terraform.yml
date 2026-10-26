@@ -1,0 +1,176 @@
+name: ScaleKart Infrastructure (Terraform)
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "terraform/**"
+      - ".github/workflows/terraform.yml"
+
+  push:
+    branches: [main]
+    paths:
+      - "terraform/**"
+      - ".github/workflows/terraform.yml"
+
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target deployment environment"
+        required: true
+        default: "dev"
+        type: choice
+        options:
+          - dev
+          - prod
+      action:
+        description: "Terraform action to execute"
+        required: true
+        default: "plan"
+        type: choice
+        options:
+          - plan
+          - apply
+          - destroy
+
+env:
+  AWS_REGION: "ap-south-1"
+  TF_VERSION: "1.8.0"
+
+jobs:
+  # -------------------------------------------------------------
+  # Job 1: Static Lint & Format Verification
+  # -------------------------------------------------------------
+  lint-and-validate:
+    name: Terraform Lint & Validate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Check Formatting
+        run: terraform fmt -check -recursive terraform/
+
+      - name: Validate Dev Configuration
+        run: |
+          cd terraform/environments/dev
+          terraform init -backend=false
+          terraform validate
+
+      - name: Validate Prod Configuration
+        run: |
+          cd terraform/environments/prod
+          terraform init -backend=false
+          terraform validate
+
+  # -------------------------------------------------------------
+  # Job 2: Terraform Plan (Runs on PRs or manual dispatch)
+  # -------------------------------------------------------------
+  terraform-plan:
+    name: Terraform Plan (${{ github.event.inputs.environment || 'dev' }})
+    needs: [lint-and-validate]
+    runs-on: ubuntu-latest
+    env:
+      TARGET_ENV: ${{ github.event.inputs.environment || 'dev' }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Check AWS Secrets Presence
+        run: |
+          if [ -z "${{ secrets.AWS_ACCESS_KEY_ID }}" ] || [ -z "${{ secrets.AWS_SECRET_ACCESS_KEY }}" ]; then
+            echo "::error::Missing AWS Credentials in GitHub Repository Secrets!"
+            echo "Terraform requires access to the S3 remote state bucket (scalekart-terraform-state-838885265032)."
+            echo "Please navigate to: GitHub Repo -> Settings -> Secrets and variables -> Actions"
+            echo "Add two repository secrets:"
+            echo "  1. AWS_ACCESS_KEY_ID"
+            echo "  2. AWS_SECRET_ACCESS_KEY"
+            exit 1
+          fi
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Terraform Init
+        id: init
+        run: |
+          cd terraform/environments/${{ env.TARGET_ENV }}
+          terraform init
+
+      - name: Terraform Plan
+        id: plan
+        run: |
+          cd terraform/environments/${{ env.TARGET_ENV }}
+          terraform plan -no-color -out=tfplan | tee plan_output.txt
+
+      - name: Add Plan Summary to GitHub Actions Summary
+        if: always()
+        run: |
+          echo "### 🌍 Terraform Plan Summary for \`${{ env.TARGET_ENV }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Triggered by:** \`${{ github.event_name }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit:** \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ -f terraform/environments/${{ env.TARGET_ENV }}/plan_output.txt ]; then
+            echo "\`\`\`hcl" >> $GITHUB_STEP_SUMMARY
+            tail -n 35 terraform/environments/${{ env.TARGET_ENV }}/plan_output.txt >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          fi
+
+  # -------------------------------------------------------------
+  # Job 3: Terraform Apply (Runs on push to main or manual dispatch 'apply')
+  # -------------------------------------------------------------
+  terraform-apply:
+    name: Terraform Apply (${{ github.event.inputs.environment || 'dev' }})
+    needs: [terraform-plan]
+    if: >
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply') ||
+      (github.event_name == 'push' && github.ref == 'refs/heads/main')
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment || 'dev' }}
+    env:
+      TARGET_ENV: ${{ github.event.inputs.environment || 'dev' }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Terraform Init
+        run: |
+          cd terraform/environments/${{ env.TARGET_ENV }}
+          terraform init
+
+      - name: Terraform Apply
+        run: |
+          cd terraform/environments/${{ env.TARGET_ENV }}
+          terraform apply -auto-approve
+
+      - name: Post-Apply Summary
+        if: success()
+        run: |
+          echo "### ✅ Terraform Applied Successfully to \`${{ env.TARGET_ENV }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "Infrastructure resources in \`terraform/environments/${{ env.TARGET_ENV }}\` are up to date." >> $GITHUB_STEP_SUMMARY

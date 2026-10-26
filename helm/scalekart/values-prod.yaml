@@ -1,0 +1,53 @@
+# Production values for AWS EKS & AWS ECR deployment (Prod Environment)
+# Managed automatically via Jenkins CI and ArgoCD GitOps
+
+global:
+  namespace: simianx-prod
+
+backend:
+  replicaCount: 3
+  image:
+    repository: "REPLACE_ECR_REGISTRY/simianx-backend-prod"
+    pullPolicy: Always
+    tag: "latest" # Automatically updated by Jenkins via GitOps commit
+  resources:
+    requests:
+      cpu: 200m
+      memory: 256Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+prometheus:
+  enabled: true
+  service:
+    type: ClusterIP
+    port: 9090
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+# AWS Application Load Balancer (ALB) for Prod Backend API
+ingress:
+  enabled: true
+  className: "alb"
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/group.name: "simianx-prod"
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}]'
+    alb.ingress.kubernetes.io/healthcheck-path: /health
+    alb.ingress.kubernetes.io/healthcheck-interval-seconds: "15"
+    alb.ingress.kubernetes.io/healthcheck-timeout-seconds: "5"
+    alb.ingress.kubernetes.io/healthy-threshold-count: "2"
+    alb.ingress.kubernetes.io/unhealthy-threshold-count: "2"
+  hosts:
+    - host: ""
+      paths:
+        - path: /
+          pathType: Prefix
+          service: backend

@@ -1,0 +1,10 @@
+environment         = "dev"
+aws_region          = "ap-south-1"
+cluster_name        = "simianx-eks-dev"
+cluster_version     = "1.31"
+vpc_cidr            = "10.10.0.0/16"
+node_instance_types  = ["t3.micro"]
+node_desired_size    = 2
+node_min_size        = 1
+node_max_size        = 3
+backend_alb_dns_name = "k8s-scalekartdev-80815ad2d5-1134625536.ap-south-1.elb.amazonaws.com"

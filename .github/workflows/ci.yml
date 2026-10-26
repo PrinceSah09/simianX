@@ -1,0 +1,79 @@
+name: ScaleKart CI
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "terraform/**"
+      - ".github/workflows/terraform.yml"
+  pull_request:
+    branches: [main]
+    paths-ignore:
+      - "terraform/**"
+      - ".github/workflows/terraform.yml"
+
+jobs:
+  backend:
+    name: Backend Tests & Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          cd backend
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+
+      - name: Run Ruff Lint
+        run: |
+          cd backend
+          ruff check app/ tests/
+
+      - name: Run Pytest Test Suite
+        run: |
+          cd backend
+          pytest tests/ -v --cov=app
+
+  frontend:
+    name: Frontend Build & Typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install and Build
+        run: |
+          cd frontend
+          npm ci
+          npm run build
+
+  helm:
+    name: Helm Lint & Template
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: "v3.15.0"
+
+      - name: Lint Helm Chart
+        run: |
+          helm lint ./helm/scalekart
+          helm template local ./helm/scalekart > /dev/null
+          helm template dev ./helm/scalekart -f ./helm/scalekart/values-dev.yaml > /dev/null
+          helm template prod ./helm/scalekart -f ./helm/scalekart/values-prod.yaml > /dev/null

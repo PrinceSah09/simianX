@@ -1,0 +1,50 @@
+# Development values for AWS EKS & AWS ECR deployment (Dev Environment)
+# Managed automatically via Jenkins CI and ArgoCD GitOps
+
+global:
+  namespace: simianx-dev
+
+backend:
+  replicaCount: 1
+  image:
+    repository: "838885265032.dkr.ecr.ap-south-1.amazonaws.com/simianx-backend-dev"
+    pullPolicy: Always
+    tag: "latest" # Automatically updated by Jenkins via GitOps commit
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 250m
+      memory: 256Mi
+
+prometheus:
+  enabled: false
+  service:
+    type: ClusterIP
+    port: 9090
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 250m
+      memory: 256Mi
+
+# AWS Application Load Balancer (ALB) for Dev Backend API
+ingress:
+  enabled: true
+  className: "alb"
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/group.name: "simianx-dev"
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}]'
+    alb.ingress.kubernetes.io/healthcheck-path: /health
+    alb.ingress.kubernetes.io/healthcheck-interval-seconds: "15"
+  hosts:
+    - host: ""
+      paths:
+        - path: /
+          pathType: Prefix
+          service: backend

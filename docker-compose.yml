@@ -1,0 +1,40 @@
+services:
+  simianx-backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: simianx-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - APP_NAME=SimianX
+      - DEBUG=false
+      - HOST=0.0.0.0
+      - PORT=8000
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    restart: unless-stopped
+    networks:
+      - simianx-net
+
+  simianx-frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: simianx-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      simianx-backend:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - simianx-net
+
+networks:
+  simianx-net:
+    driver: bridge

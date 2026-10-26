@@ -1,0 +1,22 @@
+{{- if .Values.prometheus.enabled -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app.kubernetes.io/name: prometheus
+    {{- include "scalekart.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.prometheus.service.type }}
+  selector:
+    app: prometheus
+  ports:
+    - name: http
+      port: {{ .Values.prometheus.service.port }}
+      targetPort: 9090
+      {{- if and (eq .Values.prometheus.service.type "NodePort") .Values.prometheus.service.nodePort }}
+      nodePort: {{ .Values.prometheus.service.nodePort }}
+      {{- end }}
+      protocol: TCP
+{{- end }}

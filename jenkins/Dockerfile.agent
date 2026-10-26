@@ -1,0 +1,21 @@
+# Custom Jenkins Inbound Agent with Docker, AWS CLI, Helm, Node, and Python
+FROM jenkins/inbound-agent:alpine
+
+USER root
+
+# Install system dependencies, Docker CLI, Python, Node, and Git
+RUN apk add --no-cache \
+    curl \
+    git \
+    bash \
+    docker-cli \
+    python3 \
+    py3-pip \
+    nodejs \
+    npm \
+    aws-cli
+
+# Install Helm CLI
+RUN curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+
+USER jenkins
