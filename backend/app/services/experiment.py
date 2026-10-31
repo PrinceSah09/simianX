@@ -1,11 +1,13 @@
 """Experiment service — workload generation and metrics calculation."""
 
 import asyncio
+import collections
 import logging
 import math
 import random
 import time
 from datetime import UTC, datetime
+from typing import Any
 from uuid import UUID
 
 import httpx
@@ -72,7 +74,22 @@ CHAOS_SCENARIOS = [
 ]
 
 
+_global_request_logs: collections.deque[dict[str, Any]] = collections.deque(maxlen=1000)
+
+
 class ExperimentService:
+    @classmethod
+    def append_request_log(cls, entry: dict[str, Any]) -> None:
+        _global_request_logs.append(entry)
+
+    @classmethod
+    def get_recent_logs(cls, limit: int = 150) -> list[dict[str, Any]]:
+        return list(_global_request_logs)[-limit:]
+
+    @classmethod
+    def clear_logs(cls) -> None:
+        _global_request_logs.clear()
+
     def __init__(
         self,
         repo: InMemoryExperimentRepository,
@@ -206,6 +223,27 @@ class ExperimentService:
 
                                 samples.append((req_duration, status))
                                 self._collector.record_request(req_duration, status)
+
+                                # Record individual request in granular live log stream
+                                now_str = datetime.now(UTC).strftime("%H:%M:%S.%f")[:-4]
+                                lvl = "ERROR" if status >= 500 else "WARN" if status >= 400 else "INFO"
+                                endpoint_path = req_url.replace(self._base_url, "")
+                                extra = ""
+                                if simulated_delay > 0:
+                                    extra += f"tail delay +{simulated_delay*1000:.0f}ms"
+                                if status >= 400:
+                                    extra += (" · " if extra else "") + "chaos fault injection"
+
+                                self.append_request_log({
+                                    "id": f"req-{time.time():.4f}-{random.randint(1000, 9999)}",
+                                    "timestamp": now_str,
+                                    "level": lvl,
+                                    "endpoint": endpoint_path,
+                                    "status": status,
+                                    "durationMs": round(req_duration, 1),
+                                    "traceId": str(experiment_id)[:8],
+                                    "message": extra,
+                                })
 
                         # Fire request in background
                         asyncio.create_task(fire_request())

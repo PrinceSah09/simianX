@@ -11,8 +11,9 @@ backend:
     pullPolicy: IfNotPresent
     tag: "latest"
   service:
-    type: ClusterIP
+    type: NodePort
     port: 8000
+    nodePort: 30080
   resources:
     requests:
       cpu: 100m
@@ -26,6 +27,25 @@ backend:
     targetServiceUrl: "http://simianx-backend:8000"
     prometheusUrl: "http://prometheus:9090"
     otlpEndpoint: "http://alloy:4318/v1/traces"
+
+frontend:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: simianx-frontend
+    pullPolicy: IfNotPresent
+    tag: "latest"
+  service:
+    type: NodePort
+    port: 80
+    nodePort: 30000
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 250m
+      memory: 256Mi
 
 prometheus:
   enabled: true

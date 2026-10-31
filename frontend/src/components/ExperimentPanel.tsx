@@ -182,9 +182,15 @@ export const ExperimentPanel: React.FC<ExperimentPanelProps> = ({
 
         {/* Controls Grid: Intensity Segmented Control + Duration Slider */}
         <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
+          {/* Intensity Segmented Control */}
           <div>
-            <p className="mb-3 text-[14px] text-[#6e6e73]">Intensity</p>
-            <div className="flex rounded-full bg-[#f5f5f7] p-1">
+            <div className="mb-3 flex items-baseline justify-between">
+              <p className="text-[14px] text-[#6e6e73]">Intensity</p>
+              <p className="text-[14px] text-[#1d1d1f]">
+                {intensityOptions.find((opt) => opt.id === intensity)?.rps}
+              </p>
+            </div>
+            <div className="flex h-[54px] items-center rounded-full bg-[#f5f5f7] p-1">
               {intensityOptions.map((opt) => {
                 const isSelected = intensity === opt.id
 
@@ -194,9 +200,9 @@ export const ExperimentPanel: React.FC<ExperimentPanelProps> = ({
                     type="button"
                     disabled={isRunning}
                     onClick={() => setIntensity(opt.id)}
-                    className={`relative z-10 flex-1 rounded-full py-2 text-center text-[13px] transition-all ${
+                    className={`relative z-10 flex h-[46px] flex-1 flex-col items-center justify-center rounded-full text-center transition-all ${
                       isSelected ? "text-[#1d1d1f]" : "text-[#6e6e73] hover:text-[#1d1d1f]"
-                    } ${isRunning ? "cursor-not-allowed" : ""}`}
+                    } ${isRunning ? "cursor-not-allowed opacity-60" : ""}`}
                   >
                     {isSelected && (
                       <motion.div
@@ -205,9 +211,9 @@ export const ExperimentPanel: React.FC<ExperimentPanelProps> = ({
                         transition={{ type: "spring", stiffness: 400, damping: 30 }}
                       />
                     )}
-                    <div className="relative z-20">
-                      <span className="block text-[14px] font-medium">{opt.label}</span>
-                      <span className="text-[12px] text-[#86868b]">{opt.rps}</span>
+                    <div className="relative z-20 flex flex-col items-center">
+                      <span className="text-[13px] font-medium leading-tight">{opt.label}</span>
+                      <span className="text-[11px] leading-tight text-[#86868b]">{opt.rps}</span>
                     </div>
                   </button>
                 )
@@ -215,26 +221,40 @@ export const ExperimentPanel: React.FC<ExperimentPanelProps> = ({
             </div>
           </div>
 
-          {/* Apple-style Duration Slider */}
+          {/* Apple-style Duration Control */}
           <div>
             <div className="mb-3 flex items-baseline justify-between">
               <p className="text-[14px] text-[#6e6e73]">Duration</p>
               <p className="text-[14px] text-[#1d1d1f]">{duration} seconds</p>
             </div>
-            <div className="flex rounded-full bg-[#f5f5f7] p-1">
-              {[10, 15, 20, 25, 30].map((seconds) => (
-                <button
-                  key={seconds}
-                  type="button"
-                  disabled={isRunning}
-                  onClick={() => setDuration(seconds)}
-                  className={`flex-1 rounded-full py-2 text-[14px] ${
-                    duration === seconds ? "bg-white font-medium text-[#1d1d1f] shadow-sm" : "text-[#6e6e73]"
-                  } disabled:opacity-50`}
-                >
-                  {seconds}
-                </button>
-              ))}
+            <div className="flex h-[54px] items-center rounded-full bg-[#f5f5f7] p-1">
+              {[10, 15, 20, 25, 30].map((seconds) => {
+                const isSelected = duration === seconds
+
+                return (
+                  <button
+                    key={seconds}
+                    type="button"
+                    disabled={isRunning}
+                    onClick={() => setDuration(seconds)}
+                    className={`relative z-10 flex h-[46px] flex-1 flex-col items-center justify-center rounded-full text-center transition-all ${
+                      isSelected ? "text-[#1d1d1f]" : "text-[#6e6e73] hover:text-[#1d1d1f]"
+                    } ${isRunning ? "cursor-not-allowed opacity-60" : ""}`}
+                  >
+                    {isSelected && (
+                      <motion.div
+                        layoutId="activeDurationPill"
+                        className="absolute inset-0 rounded-full bg-white shadow-sm"
+                        transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                      />
+                    )}
+                    <div className="relative z-20 flex flex-col items-center">
+                      <span className="text-[13px] font-medium leading-tight">{seconds}s</span>
+                      <span className="text-[11px] leading-tight text-[#86868b]">sec</span>
+                    </div>
+                  </button>
+                )
+              })}
             </div>
           </div>
         </div>

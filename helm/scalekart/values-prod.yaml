@@ -18,6 +18,9 @@ backend:
       cpu: 1000m
       memory: 1Gi
 
+frontend:
+  enabled: false
+
 prometheus:
   enabled: true
   service:

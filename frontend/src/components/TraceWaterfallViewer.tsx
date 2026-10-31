@@ -90,27 +90,32 @@ export const TraceWaterfallViewer: React.FC<TraceWaterfallViewerProps> = () => {
     <div className="space-y-4">
       {/* Apple-grade Header Bar */}
       <div className="flex flex-col gap-5 rounded-[28px] bg-white px-6 py-8 sm:flex-row sm:items-end sm:justify-between sm:px-10">
-        <h2 className="text-[32px] font-semibold tracking-[-0.035em] text-[#1d1d1f] sm:text-[40px]">
-          Traces
-        </h2>
+        <div>
+          <h2 className="text-[32px] font-semibold tracking-[-0.035em] text-[#1d1d1f] sm:text-[40px]">
+            Traces
+          </h2>
+          <p className="mt-1 text-[14px] text-[#6e6e73]">
+            OpenTelemetry distributed spans, execution waterfalls, and latency inspection.
+          </p>
+        </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <div className="relative">
-            <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#86868b]" />
+            <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#86868b]" />
             <input
               type="text"
-              placeholder="Filter trace ID, endpoint, scenario..."
+              placeholder="Filter trace ID, endpoint..."
               value={filterQuery}
               onChange={(e) => setFilterQuery(e.target.value)}
-              className="h-9 w-56 rounded-full bg-[#f5f5f7] pl-8 pr-4 text-[14px] text-[#1d1d1f] placeholder:text-[#86868b] focus:outline-none"
+              className="h-9 w-56 rounded-full bg-[#f5f5f7] pl-8 pr-4 text-[13px] text-[#1d1d1f] placeholder:text-[#86868b] focus:outline-none"
             />
           </div>
           <button
             onClick={loadTraces}
             disabled={isLoadingTraces}
-            className="text-[15px] text-[#0066cc] hover:underline disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 text-[15px] text-[#0066cc] hover:underline disabled:opacity-50"
           >
-            <RefreshCw className={`h-3 w-3 ${isLoadingTraces ? "animate-spin" : ""}`} />
+            <RefreshCw className={`h-3.5 w-3.5 ${isLoadingTraces ? "animate-spin" : ""}`} />
             Refresh
           </button>
         </div>

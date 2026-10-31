@@ -4,15 +4,18 @@ import { CommandMenu } from "./components/CommandMenu"
 import { ExperimentHistoryTable } from "./components/ExperimentHistoryTable"
 import { ExperimentPanel } from "./components/ExperimentPanel"
 import { ExperimentResultsCard } from "./components/ExperimentResultsCard"
+import { FloatingScenarioHUD } from "./components/FloatingScenarioHUD"
 import { InfrastructurePanel } from "./components/InfrastructurePanel"
 import { LiveLogsDrawer } from "./components/LiveLogsDrawer"
 import { Navbar } from "./components/Navbar"
 import { TelemetryGauges } from "./components/TelemetryGauges"
 import { TraceWaterfallViewer } from "./components/TraceWaterfallViewer"
 import {
+  clearLiveLogs,
   createExperiment,
   fetchHealth,
   fetchInfrastructure,
+  fetchLiveLogs,
   fetchMetrics,
   getExperiment,
   listExperiments,
@@ -24,10 +27,12 @@ import type { Experiment, MetricsData, ScenarioType } from "./types/experiment"
 import type { BackendHealth } from "./types/health"
 import type { InfrastructureData } from "./types/infrastructure"
 import type { LogEntry } from "./types/telemetry"
+import { useToast } from "./context/ToastContext"
 
 type NavigationTab = "studio" | "traces" | "history"
 
 export const App: React.FC = () => {
+  const { showToast } = useToast()
   // Navigation tab state
   const [activeTab, setActiveTab] = useState<NavigationTab>("studio")
 
@@ -42,6 +47,7 @@ export const App: React.FC = () => {
   const [experiments, setExperiments] = useState<Experiment[]>([])
   const [activeExperiment, setActiveExperiment] = useState<Experiment | null>(null)
   const [selectedExperiment, setSelectedExperiment] = useState<Experiment | null>(null)
+  const [completedExperiment, setCompletedExperiment] = useState<Experiment | null>(null)
   const [isStarting, setIsStarting] = useState<boolean>(false)
   const [isStopping, setIsStopping] = useState<boolean>(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
@@ -67,8 +73,29 @@ export const App: React.FC = () => {
       id: Math.random().toString(36).substring(2, 9),
       timestamp: timeStr,
     }
-    setLogs((prev) => [...prev.slice(-49), newLog])
+    setLogs((prev) => [...prev.slice(-199), newLog])
   }, [])
+
+  // Poll granular request logs from backend
+  const loadLiveLogs = useCallback(async () => {
+    try {
+      const data = await fetchLiveLogs(200)
+      if (data.items && data.items.length > 0) {
+        setLogs(data.items)
+      }
+    } catch (err: any) {
+      console.debug("Live logs polling error:", err?.message)
+    }
+  }, [])
+
+  const handleClearLogs = async () => {
+    setLogs([])
+    try {
+      await clearLiveLogs()
+    } catch (err) {
+      console.debug("Failed to clear logs:", err)
+    }
+  }
 
   // Poll metrics from backend
   const loadMetrics = useCallback(async () => {
@@ -167,6 +194,15 @@ export const App: React.FC = () => {
     return () => clearInterval(interval)
   }, [checkHealth, loadMetrics, loadHistory, loadInfrastructure, activeExperiment?.status])
 
+  // Live granular request logs polling
+  useEffect(() => {
+    loadLiveLogs()
+    // Poll logs rapidly (400ms) when experiment running or console open
+    const isFast = activeExperiment?.status === "running" || isLogsOpen
+    const logsInterval = setInterval(loadLiveLogs, isFast ? 400 : 2500)
+    return () => clearInterval(logsInterval)
+  }, [loadLiveLogs, activeExperiment?.status, isLogsOpen])
+
   // Active experiment tracking loop
   useEffect(() => {
     if (!activeExperiment || activeExperiment.status !== "running") return
@@ -177,8 +213,17 @@ export const App: React.FC = () => {
         if (updated.status !== "running") {
           setSelectedExperiment(updated)
           setActiveExperiment(null)
+          setCompletedExperiment(updated)
+          setTimeout(() => {
+            setCompletedExperiment((curr) => (curr?.id === updated.id ? null : curr))
+          }, 6000)
           loadHistory()
           loadMetrics()
+          showToast({
+            type: updated.status === "completed" ? "success" : "info",
+            title: updated.status === "completed" ? "Scenario completed" : `Scenario ${updated.status}`,
+            description: `${updated.results.total_requests} reqs · ${updated.results.achieved_rps} RPS achieved`,
+          })
           appendLog({
             level: updated.status === "completed" ? "INFO" : "WARN",
             endpoint: `POST /api/v1/experiments/${updated.id}`,
@@ -194,7 +239,7 @@ export const App: React.FC = () => {
     }, 1000)
 
     return () => clearInterval(pollInterval)
-  }, [activeExperiment, loadHistory, loadMetrics, appendLog])
+  }, [activeExperiment, loadHistory, loadMetrics, appendLog, showToast])
 
   // Start experiment
   const handleStartExperiment = async (params: {
@@ -204,7 +249,16 @@ export const App: React.FC = () => {
   }) => {
     setIsStarting(true)
     setErrorMessage(null)
+    setCompletedExperiment(null)
     const targetScenario = params.scenario || "traffic_burst"
+    const scenarioLabel = targetScenario.replaceAll("_", " ")
+
+    showToast({
+      type: "loading",
+      title: "Launching scenario…",
+      description: `${scenarioLabel} (${params.intensity}) · ${params.duration_seconds}s`,
+    })
+
     try {
       const exp = await createExperiment({
         scenario: targetScenario,
@@ -213,6 +267,11 @@ export const App: React.FC = () => {
       })
       setActiveExperiment(exp)
       setSelectedExperiment(null)
+      showToast({
+        type: "success",
+        title: "Scenario in flight",
+        description: `${scenarioLabel} moving traffic live`,
+      })
       appendLog({
         level: "INFO",
         endpoint: "POST /api/v1/experiments",
@@ -223,7 +282,13 @@ export const App: React.FC = () => {
       })
       loadHistory()
     } catch (err: any) {
-      setErrorMessage(err?.message || "Failed to start experiment")
+      const msg = err?.message || "Failed to start experiment"
+      setErrorMessage(msg)
+      showToast({
+        type: "error",
+        title: "Scenario launch failed",
+        description: msg,
+      })
       appendLog({
         level: "ERROR",
         endpoint: "POST /api/v1/experiments",
@@ -244,6 +309,11 @@ export const App: React.FC = () => {
       const stopped = await stopExperiment(id)
       setActiveExperiment(stopped)
       setSelectedExperiment(stopped)
+      showToast({
+        type: "info",
+        title: "Scenario stopped",
+        description: `Captured ${stopped.results.total_requests} requests`,
+      })
       appendLog({
         level: "WARN",
         endpoint: `POST /api/v1/experiments/${id}/stop`,
@@ -256,6 +326,11 @@ export const App: React.FC = () => {
       loadMetrics()
     } catch (err: any) {
       setErrorMessage(err?.message || "Failed to stop experiment")
+      showToast({
+        type: "error",
+        title: "Stop failed",
+        description: err?.message || "Could not abort experiment",
+      })
     } finally {
       setIsStopping(false)
     }
@@ -315,38 +390,11 @@ export const App: React.FC = () => {
           loadInfrastructure()
         }}
         onOpenCommandMenu={() => setIsCommandMenuOpen(true)}
+        isLogsOpen={isLogsOpen}
+        onToggleLogs={() => setIsLogsOpen((prev) => !prev)}
       />
 
-      <main className="mx-auto w-full max-w-[980px] flex-1 px-5 pb-20 pt-12">
-        <section className="flex flex-col items-center px-1 pb-12 pt-16 text-center sm:pb-16 sm:pt-24">
-          <h1
-            className="apple-rise max-w-[14ch] text-[44px] font-semibold leading-[1.04] tracking-[-0.045em] sm:text-[64px]"
-          >
-            Resilience, measured live.
-          </h1>
-          <p
-            className="apple-rise mt-5 max-w-[520px] text-[19px] leading-snug text-[#6e6e73] sm:text-[21px]"
-            style={{ animationDelay: "80ms" }}
-          >
-            A simulation of load, latency, and failure. The rings move with the run.
-          </p>
-          <p className="apple-rise mt-4 text-[13px] text-[#86868b]" style={{ animationDelay: "140ms" }}>
-            {infraData?.namespace || "simianx"}
-            <span className="mx-2">·</span>
-            {infraData?.ready_replicas ?? "–"}/{infraData?.desired_replicas ?? "–"} pods
-            <span className="mx-2">·</span>
-            {infraData?.prometheus?.connected ? "Prometheus connected" : "Prometheus standby"}
-          </p>
-        </section>
-
-        {/* Live Terminal Drawer */}
-        <LiveLogsDrawer
-          isOpen={isLogsOpen}
-          onClose={() => setIsLogsOpen(false)}
-          logs={logs}
-          onClearLogs={() => setLogs([])}
-        />
-
+      <main className="mx-auto w-full max-w-[980px] flex-1 px-5 pb-20 pt-16 sm:pt-20">
         {/* TAB BODIES */}
         <div className="min-h-[480px]">
           {/* TAB 1: RELIABILITY STUDIO */}
@@ -438,6 +486,26 @@ export const App: React.FC = () => {
         <p>SimianX · Cloud resilience</p>
         <p>OpenTelemetry · Kubernetes</p>
       </footer>
+
+      {/* Floating Simulation In-Progress Float Screen */}
+      <FloatingScenarioHUD
+        activeExperiment={activeExperiment}
+        isStarting={isStarting}
+        isStopping={isStopping}
+        onStop={handleStopExperiment}
+        metrics={metrics}
+        infraData={infraData}
+        completedExperiment={completedExperiment}
+        onDismissCompleted={() => setCompletedExperiment(null)}
+      />
+
+      {/* Slide-Up Bottom Terminal Console Drawer */}
+      <LiveLogsDrawer
+        isOpen={isLogsOpen}
+        onClose={() => setIsLogsOpen(false)}
+        logs={logs}
+        onClearLogs={handleClearLogs}
+      />
 
       {/* Command Palette (⌘K) */}
       <CommandMenu

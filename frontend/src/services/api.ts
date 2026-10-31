@@ -8,6 +8,7 @@ import type {
   TraceSummaryItem,
 } from "../types/experiment"
 import type { BackendHealth } from "../types/health"
+import type { LogEntry } from "../types/telemetry"
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || ""
 
@@ -187,4 +188,23 @@ export async function fetchTraceDetail(traceId: string): Promise<TraceDetail> {
   }
   return res.json()
 }
+
+export async function fetchLiveLogs(limit: number = 200): Promise<{ items: LogEntry[]; total: number }> {
+  const res = await fetch(`${BASE_URL}/api/v1/logs?limit=${limit}`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+  })
+  if (!res.ok) {
+    throw new Error(`Failed to fetch live logs: HTTP ${res.status}`)
+  }
+  return res.json()
+}
+
+export async function clearLiveLogs(): Promise<void> {
+  await fetch(`${BASE_URL}/api/v1/logs`, {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+  })
+}
+
 

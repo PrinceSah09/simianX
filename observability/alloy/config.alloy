@@ -41,6 +41,7 @@ prometheus.scrape "simianx" {
   ]
   metrics_path    = "/metrics"
   scrape_interval = "2s"
+  scrape_timeout  = "2s"
   forward_to      = [prometheus.remote_write.default.receiver]
 }
 

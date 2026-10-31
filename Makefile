@@ -58,15 +58,27 @@ docker-build: ## Build local Docker images
 	docker build -t simianx-backend:latest ./backend
 	docker build -t simianx-frontend:latest ./frontend
 
-kind-up: docker-build ## Deploy SimianX Backend & Prometheus to local Kind cluster via Helm
+kind-create: ## Create local Kind Kubernetes cluster from kind-config.yaml
+	@echo "==> Ensuring Kind cluster 'simianx' exists..."
+	@if ! kind get clusters 2>/dev/null | grep -q "^simianx$$"; then \
+		kind create cluster --config kind-config.yaml; \
+	else \
+		echo "Kind cluster 'simianx' already exists."; \
+	fi
+
+kind-up: kind-create docker-build ## Deploy SimianX Backend & Prometheus to local Kind cluster via Helm
 	@echo "==> Loading backend image into Kind cluster..."
-	kind load docker-image simianx-backend:latest --name simianx || true
+	kind load docker-image simianx-backend:latest --name simianx
 	@echo "==> Deploying backend services via Helm..."
 	helm upgrade --install simianx ./helm/scalekart -n simianx --create-namespace
 
 kind-down: ## Uninstall Helm release from local Kind cluster
 	@echo "==> Tearing down SimianX release..."
 	helm uninstall simianx -n simianx || true
+
+kind-destroy: ## Delete local Kind Kubernetes cluster
+	@echo "==> Deleting Kind cluster 'simianx'..."
+	kind delete cluster --name simianx
 
 argocd-up: ## Install ArgoCD and apply GitOps applications
 	@echo "==> Bootstrapping ArgoCD..."
