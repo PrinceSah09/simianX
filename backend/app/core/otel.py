@@ -45,6 +45,8 @@ class StoredSpan:
         duration_ms: float,
         status: str,
         attributes: dict[str, Any],
+        start_ns: int = 0,
+        end_ns: int = 0,
     ) -> None:
         self.span_id = span_id
         self.trace_id = trace_id
@@ -55,8 +57,15 @@ class StoredSpan:
         self.duration_ms = duration_ms
         self.status = status
         self.attributes = attributes
+        self.start_ns = start_ns
+        self.end_ns = end_ns
 
-    def to_dict(self) -> dict[str, Any]:
+    def to_dict(self, earliest_start_ns: int = 0) -> dict[str, Any]:
+        offset_ms = (
+            round(max(0, (self.start_ns - earliest_start_ns)) / 1_000_000, 2)
+            if earliest_start_ns > 0
+            else 0.0
+        )
         return {
             "span_id": self.span_id,
             "trace_id": self.trace_id,
@@ -65,6 +74,7 @@ class StoredSpan:
             "start_time": self.start_time_iso,
             "end_time": self.end_time_iso,
             "duration_ms": self.duration_ms,
+            "offset_ms": offset_ms,
             "status": self.status,
             "attributes": self.attributes,
         }
@@ -81,7 +91,75 @@ class InMemoryTraceBuffer:
         # Order of trace IDs
         self._trace_order: deque[str] = deque(maxlen=max_traces)
 
+    def _is_internal_polling(self, span: ReadableSpan) -> bool:
+        """Filter out internal dashboard polling and Prometheus scrapes."""
+        name = span.name
+        # 1. Exact matches for internal admin endpoints
+        if name in (
+            "GET /metrics",
+            "GET /health",
+            "GET /api/v1/metrics",
+            "GET /api/v1/metrics/series",
+            "GET /api/v1/traces",
+            "GET /api/v1/logs",
+            "GET /api/v1/infrastructure",
+            "GET /api/v1/experiments",
+            "GET /",
+            "GET",
+        ):
+            return True
+
+        # 2. Prefixes of admin paths
+        admin_prefixes = (
+            "/metrics",
+            "/health",
+            "/api/v1/metrics",
+            "/api/v1/traces",
+            "/api/v1/logs",
+            "/api/v1/infrastructure",
+            "/api/v1/experiments",
+            "/docs",
+            "/redoc",
+            "/openapi.json",
+            "/favicon.ico",
+        )
+        for prefix in admin_prefixes:
+            if (
+                name.startswith(f"GET {prefix}")
+                or name.startswith(f"POST {prefix}")
+                or name.startswith(f"DELETE {prefix}")
+            ):
+                return True
+
+        # 3. Check attributes for Prometheus / internal URLs
+        attrs = span.attributes or {}
+        url = str(attrs.get("http.url") or attrs.get("url.full") or "")
+        if url:
+            for keyword in (
+                ":9090",
+                "prometheus",
+                "/health",
+                "/api/v1/logs",
+                "/api/v1/infrastructure",
+                "/api/v1/metrics",
+                "/api/v1/traces",
+                "/api/v1/experiments",
+            ):
+                if keyword in url:
+                    return True
+
+        target = str(attrs.get("http.target") or attrs.get("http.route") or "")
+        if target:
+            for prefix in admin_prefixes:
+                if target.startswith(prefix):
+                    return True
+
+        return False
+
     def add_span(self, span: ReadableSpan) -> None:
+        if self._is_internal_polling(span):
+            return
+
         trace_id = format(span.context.trace_id, "032x")
         span_id = format(span.context.span_id, "016x")
         parent_id = format(span.parent.span_id, "016x") if span.parent else None
@@ -117,6 +195,8 @@ class InMemoryTraceBuffer:
             duration_ms=duration_ms,
             status=status_str,
             attributes=attributes,
+            start_ns=start_ns,
+            end_ns=end_ns,
         )
 
         with self._lock:
@@ -129,7 +209,7 @@ class InMemoryTraceBuffer:
 
             self._traces[trace_id].append(stored)
 
-    def get_traces_summary(self, limit: int = 30) -> list[dict[str, Any]]:
+    def get_traces_summary(self, limit: int = 40) -> list[dict[str, Any]]:
         """Return summary of recent traces ordered latest first."""
         with self._lock:
             trace_ids = list(self._trace_order)[-limit:]
@@ -141,15 +221,31 @@ class InMemoryTraceBuffer:
                 if not spans:
                     continue
 
-                # Root span has no parent or earliest start
+                earliest_start_ns = min((s.start_ns for s in spans), default=0)
+                latest_end_ns = max((s.end_ns for s in spans), default=earliest_start_ns)
+                total_duration_ms = round(
+                    max(0, (latest_end_ns - earliest_start_ns)) / 1_000_000, 2
+                )
+                if total_duration_ms == 0.0:
+                    total_duration_ms = max((s.duration_ms for s in spans), default=0.0)
+
                 root = next((s for s in spans if s.parent_id is None), spans[0])
-                total_duration_ms = max((s.duration_ms for s in spans), default=0.0)
                 has_error = any("ERROR" in s.status for s in spans)
-                root_http_status = root.attributes.get("http.status_code") or root.attributes.get("http.response.status_code")
+                root_http_status = root.attributes.get("http.status_code") or root.attributes.get(
+                    "http.response.status_code"
+                )
+
+                display_name = root.name
+                if display_name.startswith("simianx.chaos."):
+                    sc = display_name.replace("simianx.chaos.", "").replace("_", " ").title()
+                    display_name = f"Chaos: {sc}"
+                elif display_name.startswith("workload."):
+                    sc = display_name.replace("workload.", "").replace("_", " ").title()
+                    display_name = f"Workload: {sc}"
 
                 summaries.append({
                     "trace_id": tid,
-                    "root_name": root.name,
+                    "root_name": display_name,
                     "span_count": len(spans),
                     "start_time": root.start_time_iso,
                     "duration_ms": total_duration_ms,
@@ -166,17 +262,37 @@ class InMemoryTraceBuffer:
             if not spans:
                 return None
 
+            earliest_start_ns = min((s.start_ns for s in spans), default=0)
+            latest_end_ns = max((s.end_ns for s in spans), default=earliest_start_ns)
+            total_duration_ms = round(
+                max(0, (latest_end_ns - earliest_start_ns)) / 1_000_000, 2
+            )
+            if total_duration_ms == 0.0:
+                total_duration_ms = max((s.duration_ms for s in spans), default=0.0)
+
             root = next((s for s in spans if s.parent_id is None), spans[0])
-            total_duration_ms = max((s.duration_ms for s in spans), default=0.0)
             has_error = any("ERROR" in s.status for s in spans)
+
+            display_name = root.name
+            if display_name.startswith("simianx.chaos."):
+                sc = display_name.replace("simianx.chaos.", "").replace("_", " ").title()
+                display_name = f"Chaos: {sc}"
+            elif display_name.startswith("workload."):
+                sc = display_name.replace("workload.", "").replace("_", " ").title()
+                display_name = f"Workload: {sc}"
+
+            # Sort spans chronologically by start_ns
+            sorted_spans = sorted(spans, key=lambda s: s.start_ns)
 
             return {
                 "trace_id": trace_id,
-                "root_name": root.name,
+                "root_name": display_name,
                 "start_time": root.start_time_iso,
                 "duration_ms": total_duration_ms,
                 "status": "ERROR" if has_error else "OK",
-                "spans": [s.to_dict() for s in spans],
+                "spans": [
+                    s.to_dict(earliest_start_ns=earliest_start_ns) for s in sorted_spans
+                ],
             }
 
 
@@ -230,11 +346,11 @@ def setup_opentelemetry(app: FastAPI) -> TracerProvider:
     trace.set_tracer_provider(provider)
     _tracer_provider = provider
 
-    # 3. Auto-instrument FastAPI routes (excluding internal scraping/health endpoints)
+    # 3. Auto-instrument FastAPI routes (excluding internal scraping/health/admin endpoints)
     FastAPIInstrumentor.instrument_app(
         app,
         tracer_provider=provider,
-        excluded_urls="/health,/metrics,/api/v1/metrics,/api/v1/metrics/series,/docs,/openapi.json",
+        excluded_urls="/health,/metrics,/api/v1/metrics.*,/api/v1/traces.*,/api/v1/logs.*,/api/v1/infrastructure.*,/api/v1/experiments.*,/docs,/redoc,/openapi.json",
     )
 
     # 4. Auto-instrument HTTPX client for outbound requests

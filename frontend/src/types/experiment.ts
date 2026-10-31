@@ -51,6 +51,7 @@ export interface SpanDetail {
   start_time: string
   end_time: string
   duration_ms: number
+  offset_ms?: number
   status: string
   attributes: Record<string, any>
 }
