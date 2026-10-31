@@ -328,7 +328,7 @@ export const App: React.FC = () => {
             className="apple-rise mt-5 max-w-[520px] text-[19px] leading-snug text-[#6e6e73] sm:text-[21px]"
             style={{ animationDelay: "80ms" }}
           >
-            Golden signals, traces, and controlled failure injection.
+            A simulation of load, latency, and failure. The rings move with the run.
           </p>
           <p className="apple-rise mt-4 text-[13px] text-[#86868b]" style={{ animationDelay: "140ms" }}>
             {infraData?.namespace || "simianx"}

@@ -5,6 +5,7 @@ import {
   Play,
   Square,
 } from "lucide-react"
+import { ActivityRings } from "./ActivityRings"
 import type { Experiment, ScenarioType } from "../types/experiment"
 
 interface ExperimentPanelProps {
@@ -239,20 +240,25 @@ export const ExperimentPanel: React.FC<ExperimentPanelProps> = ({
         </div>
 
         {/* Live Active Experiment Progress Bar */}
-        {isRunning && (
-          <div className="space-y-2">
-            <div className="flex justify-between text-[13px] text-[#6e6e73]">
-              <span>{activeExperiment?.scenario.replaceAll("_", " ")}</span>
-              <span>
-                {elapsedSeconds}s / {activeExperiment?.duration_seconds}s
-              </span>
-            </div>
-            <div className="h-1.5 w-full overflow-hidden rounded-full bg-[#e8e8ed]">
-              <motion.div
-                className="h-full rounded-full bg-[#0071e3]"
-                style={{ width: `${progressPct}%` }}
-                transition={{ ease: "linear" }}
-              />
+        {isRunning && activeExperiment && (
+          <div className="flex items-center gap-5 rounded-[22px] bg-[#f5f5f7] px-5 py-4">
+            <ActivityRings
+              size={72}
+              stroke={7}
+              rings={[{ value: progressPct, max: 100, color: "#0071e3" }]}
+              center={
+                <span className="text-[13px] font-semibold tabular-nums text-[#1d1d1f]">
+                  {Math.round(progressPct)}
+                </span>
+              }
+            />
+            <div>
+              <p className="text-[17px] font-medium tracking-[-0.02em] capitalize">
+                {activeExperiment.scenario.replaceAll("_", " ")}
+              </p>
+              <p className="mt-0.5 text-[14px] text-[#6e6e73]">
+                {elapsedSeconds}s of {activeExperiment.duration_seconds}s
+              </p>
             </div>
           </div>
         )}
