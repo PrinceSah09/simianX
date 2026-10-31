@@ -192,3 +192,4 @@ export const AppleRingGauge: React.FC<AppleRingGaugeProps> = ({
     </div>
   )
 }
+
