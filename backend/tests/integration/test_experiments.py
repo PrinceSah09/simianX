@@ -197,3 +197,49 @@ def test_get_infrastructure_endpoint(client: TestClient) -> None:
     assert isinstance(data["pods"], list)
     assert "prometheus" in data
     assert "connected" in data["prometheus"]
+
+
+def test_list_chaos_scenarios(client: TestClient) -> None:
+    resp = client.get("/api/v1/chaos/scenarios")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert "scenarios" in data
+    scenario_ids = [s["id"] for s in data["scenarios"]]
+    assert "traffic_burst" in scenario_ids
+    assert "latency_spike" in scenario_ids
+    assert "error_spike" in scenario_ids
+    assert "memory_saturation" in scenario_ids
+
+
+def test_traces_endpoint(client: TestClient) -> None:
+    # Trigger requests to create traced operations
+    client.get("/api/v1/test-target")
+    client.get("/api/v1/test-target")
+
+    resp = client.get("/api/v1/traces")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert "traces" in data
+    assert "total" in data
+    assert data["total"] >= 1
+    first_trace = data["traces"][0]
+    assert "trace_id" in first_trace
+    assert "duration_ms" in first_trace
+
+    # Test trace detail
+    detail_resp = client.get(f"/api/v1/traces/{first_trace['trace_id']}")
+    assert detail_resp.status_code == 200
+    detail = detail_resp.json()
+    assert detail["trace_id"] == first_trace["trace_id"]
+    assert len(detail["spans"]) >= 1
+
+
+def test_create_different_chaos_scenarios(client: TestClient) -> None:
+    # Test latency spike
+    resp = client.post(
+        "/api/v1/experiments",
+        json={"scenario": "latency_spike", "duration_seconds": 10, "intensity": "low"},
+    )
+    assert resp.status_code == 201
+    exp_id = resp.json()["id"]
+    client.post(f"/api/v1/experiments/{exp_id}/stop")

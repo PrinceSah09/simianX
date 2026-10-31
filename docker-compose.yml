@@ -11,6 +11,8 @@ services:
       - DEBUG=false
       - HOST=0.0.0.0
       - PORT=8000
+      - OTLP_ENDPOINT=http://alloy:4318/v1/traces
+      - PROMETHEUS_URL=http://prometheus:9090
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')"]
       interval: 10s
@@ -34,6 +36,44 @@ services:
     restart: unless-stopped
     networks:
       - simianx-net
+
+  alloy:
+    image: grafana/alloy:v1.0.0
+    container_name: simianx-alloy
+    ports:
+      - "4318:4318" # OTLP HTTP
+      - "4317:4317" # OTLP gRPC
+      - "12345:12345" # Alloy UI
+    volumes:
+      - ./observability/alloy/config.alloy:/etc/alloy/config.alloy
+    command: run --server.http.listen-addr=0.0.0.0:12345 /etc/alloy/config.alloy
+    networks:
+      - simianx-net
+    restart: unless-stopped
+
+  tempo:
+    image: grafana/tempo:2.4.1
+    container_name: simianx-tempo
+    ports:
+      - "3200:3200" # Tempo HTTP
+    volumes:
+      - ./observability/tempo/tempo.yaml:/etc/tempo.yaml
+    command: -config.file=/etc/tempo.yaml
+    networks:
+      - simianx-net
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: simianx-prometheus
+    ports:
+      - "9090:9090"
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--web.enable-remote-write-receiver"
+    networks:
+      - simianx-net
+    restart: unless-stopped
 
 networks:
   simianx-net:

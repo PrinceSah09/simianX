@@ -25,6 +25,7 @@ backend:
     port: "8000"
     targetServiceUrl: "http://simianx-backend:8000"
     prometheusUrl: "http://prometheus:9090"
+    otlpEndpoint: "http://alloy:4318/v1/traces"
 
 prometheus:
   enabled: true

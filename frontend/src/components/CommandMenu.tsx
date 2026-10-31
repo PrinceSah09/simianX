@@ -62,25 +62,25 @@ export const CommandMenu: React.FC<CommandMenuProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center pt-24 sm:pt-32 bg-black/40 dark:bg-black/60 backdrop-blur-sm px-4 animate-in fade-in duration-100"
+      className="fixed inset-0 z-50 flex items-start justify-center pt-24 sm:pt-32 bg-black/70 backdrop-blur-md px-4 animate-in fade-in duration-100"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-lg rounded-xl border border-slate-200/90 bg-white shadow-2xl overflow-hidden dark:border-neutral-800 dark:bg-neutral-950 dark:text-neutral-200 transition-all"
+        className="w-full max-w-lg rounded-2xl border border-white/[0.12] bg-zinc-950/90 backdrop-blur-2xl shadow-[0_25px_70px_rgba(0,0,0,0.8)] overflow-hidden text-zinc-200 transition-all"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Search Input Bar */}
-        <div className="flex items-center gap-3 border-b border-slate-100 dark:border-neutral-850 px-3.5 py-2.5">
-          <Search className="h-4 w-4 text-slate-400 dark:text-neutral-500 shrink-0" />
+        {/* Search Input Bar (Apple Spotlight) */}
+        <div className="flex items-center gap-3 border-b border-white/[0.08] px-4 py-3">
+          <Search className="h-4 w-4 text-zinc-400 shrink-0" />
           <input
             type="text"
-            placeholder="Type a command or filter actions..."
+            placeholder="Search commands, chaos scenarios, traces..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             autoFocus
-            className="w-full bg-transparent text-xs text-slate-900 placeholder-slate-400 focus:outline-none font-sans dark:text-white dark:placeholder-neutral-500"
+            className="w-full bg-transparent text-xs text-white placeholder-zinc-500 focus:outline-none font-sans"
           />
-          <kbd className="rounded border border-slate-200 bg-slate-100 px-1.5 py-0.5 text-[9px] font-mono text-slate-500 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-400">
+          <kbd className="rounded-md bg-white/[0.08] border border-white/10 px-1.5 py-0.5 text-[9px] font-mono text-zinc-400">
             ESC
           </kbd>
         </div>
@@ -102,13 +102,13 @@ export const CommandMenu: React.FC<CommandMenuProps> = ({
                           onStartExperiment("low")
                           onClose()
                         }}
-                        className="flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-slate-700 hover:bg-slate-100/80 hover:text-slate-900 dark:text-neutral-300 dark:hover:bg-neutral-900 dark:hover:text-white transition"
+                        className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-zinc-300 hover:bg-white/[0.06] hover:text-white transition cursor-pointer"
                       >
                         <div className="flex items-center gap-2.5">
-                          <Zap className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                          <Zap className="h-3.5 w-3.5 text-emerald-400" />
                           <span>Start Traffic Burst (Low — 10 RPS, 10s)</span>
                         </div>
-                        <kbd className="font-mono text-[10px] text-slate-400 dark:text-neutral-500">10 RPS</kbd>
+                        <kbd className="font-mono text-[10px] text-zinc-400">10 RPS</kbd>
                       </button>
                     )}
 
@@ -118,13 +118,13 @@ export const CommandMenu: React.FC<CommandMenuProps> = ({
                           onStartExperiment("moderate")
                           onClose()
                         }}
-                        className="flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-slate-700 hover:bg-slate-100/80 hover:text-slate-900 dark:text-neutral-300 dark:hover:bg-neutral-900 dark:hover:text-white transition"
+                        className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-zinc-300 hover:bg-white/[0.06] hover:text-white transition cursor-pointer"
                       >
                         <div className="flex items-center gap-2.5">
-                          <Zap className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400" />
+                          <Zap className="h-3.5 w-3.5 text-cyan-400" />
                           <span>Start Traffic Burst (Moderate — 25 RPS, 15s)</span>
                         </div>
-                        <kbd className="font-mono text-[10px] text-slate-400 dark:text-neutral-500">25 RPS</kbd>
+                        <kbd className="font-mono text-[10px] text-zinc-400">25 RPS</kbd>
                       </button>
                     )}
 
@@ -134,13 +134,13 @@ export const CommandMenu: React.FC<CommandMenuProps> = ({
                           onStartExperiment("high")
                           onClose()
                         }}
-                        className="flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-slate-700 hover:bg-slate-100/80 hover:text-slate-900 dark:text-neutral-300 dark:hover:bg-neutral-900 dark:hover:text-white transition"
+                        className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-zinc-300 hover:bg-white/[0.06] hover:text-white transition cursor-pointer"
                       >
                         <div className="flex items-center gap-2.5">
-                          <Flame className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                          <Flame className="h-3.5 w-3.5 text-amber-400" />
                           <span>Start Traffic Burst (High — 50 RPS, 20s)</span>
                         </div>
-                        <kbd className="font-mono text-[10px] text-slate-400 dark:text-neutral-500">50 RPS</kbd>
+                        <kbd className="font-mono text-[10px] text-zinc-400">50 RPS</kbd>
                       </button>
                     )}
                   </>

@@ -39,6 +39,8 @@ spec:
               value: {{ .Values.backend.env.targetServiceUrl | quote }}
             - name: PROMETHEUS_URL
               value: {{ .Values.backend.env.prometheusUrl | quote }}
+            - name: OTLP_ENDPOINT
+              value: {{ .Values.backend.env.otlpEndpoint | default "" | quote }}
             - name: POD_NAME
               valueFrom:
                 fieldRef:

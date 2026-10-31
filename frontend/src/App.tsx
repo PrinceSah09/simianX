@@ -8,6 +8,7 @@ import { InfrastructurePanel } from "./components/InfrastructurePanel"
 import { LiveLogsDrawer } from "./components/LiveLogsDrawer"
 import { Navbar } from "./components/Navbar"
 import { TelemetryGauges } from "./components/TelemetryGauges"
+import { TraceWaterfallViewer } from "./components/TraceWaterfallViewer"
 import {
   createExperiment,
   fetchHealth,
@@ -19,12 +20,12 @@ import {
   scaleDeployment,
   stopExperiment,
 } from "./services/api"
-import type { Experiment, MetricsData } from "./types/experiment"
+import type { Experiment, MetricsData, ScenarioType } from "./types/experiment"
 import type { BackendHealth } from "./types/health"
 import type { InfrastructureData } from "./types/infrastructure"
 import type { LogEntry } from "./types/telemetry"
 
-type NavigationTab = "studio" | "history"
+type NavigationTab = "studio" | "traces" | "history"
 
 export const App: React.FC = () => {
   // Navigation tab state
@@ -197,14 +198,16 @@ export const App: React.FC = () => {
 
   // Start experiment
   const handleStartExperiment = async (params: {
+    scenario?: ScenarioType
     duration_seconds: number
     intensity: "low" | "moderate" | "high"
   }) => {
     setIsStarting(true)
     setErrorMessage(null)
+    const targetScenario = params.scenario || "traffic_burst"
     try {
       const exp = await createExperiment({
-        scenario: "traffic_burst",
+        scenario: targetScenario,
         duration_seconds: params.duration_seconds,
         intensity: params.intensity,
       })
@@ -299,7 +302,11 @@ export const App: React.FC = () => {
   }, [isCommandMenuOpen])
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 dark:bg-black dark:text-[#ededed] flex flex-col font-sans selection:bg-slate-900 selection:text-white dark:selection:bg-white dark:selection:text-black transition-colors duration-200">
+    <div className="min-h-screen bg-[#050507] text-[#ededed] flex flex-col font-sans selection:bg-white selection:text-black relative overflow-x-hidden antialiased">
+      {/* Ambient Apple Keynote Light Cones */}
+      <div className="pointer-events-none fixed top-0 left-1/2 -translate-x-1/2 w-[1100px] h-[500px] bg-[radial-gradient(ellipse_60%_40%_at_50%_-10%,rgba(59,130,246,0.18),transparent_70%)] blur-3xl z-0" />
+      <div className="pointer-events-none fixed top-60 right-[-10%] w-[650px] h-[450px] bg-[radial-gradient(ellipse_50%_40%_at_50%_50%,rgba(168,85,247,0.10),transparent_70%)] blur-3xl z-0" />
+
       {/* Top Navbar */}
       <Navbar
         health={health}
@@ -313,46 +320,83 @@ export const App: React.FC = () => {
       />
 
       {/* Main Content Area */}
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-5 sm:px-6 space-y-4">
-        {/* Sleek Minimal Tab Navigation */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200/80 dark:border-neutral-800 pb-3">
-          <div className="inline-flex items-center gap-1.5 p-1 bg-slate-200/50 dark:bg-neutral-900 rounded-lg text-xs">
+      <main className="relative z-10 mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 space-y-6">
+        {/* Apple Hero Header */}
+        <div className="pt-2 pb-1 text-center max-w-3xl mx-auto space-y-2.5">
+          <div className="inline-flex items-center gap-2 rounded-full bg-white/[0.04] px-3.5 py-1 text-[11px] font-mono text-zinc-400 border border-white/[0.08] backdrop-blur-xl shadow-inner">
+            <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+            <span>SimianX SRE Resilience Platform v0.2.0</span>
+            <span className="text-zinc-600">•</span>
+            <span className="text-blue-400 font-semibold">OpenTelemetry OTLP</span>
+          </div>
+          <h1 className="text-3xl sm:text-5xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-b from-white via-white/95 to-white/50 font-sans">
+            Autonomous Cloud Resilience
+          </h1>
+          <p className="text-xs sm:text-sm text-zinc-400 max-w-xl mx-auto leading-relaxed">
+            Real-time Golden Signal telemetry, OpenTelemetry distributed tracing, and automated chaos failure injection across Kubernetes & AWS EKS.
+          </p>
+        </div>
+
+        {/* Apple Floating Segmented Nav & Fleet Strip */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/[0.06] pb-4">
+          <div className="relative inline-flex items-center gap-1.5 p-1 rounded-full bg-zinc-950/80 border border-white/[0.08] backdrop-blur-2xl shadow-xl text-xs">
             <button
               onClick={() => setActiveTab("studio")}
-              className={`px-3 py-1.5 rounded-md font-medium transition-all ${
+              className={`relative z-10 px-4 py-1.5 rounded-full font-medium transition-all cursor-pointer ${
                 activeTab === "studio"
-                  ? "bg-white text-slate-900 shadow-xs dark:bg-neutral-800 dark:text-white"
-                  : "text-slate-500 hover:text-slate-800 dark:text-neutral-400 dark:hover:text-white"
+                  ? "bg-white text-black font-semibold shadow-sm"
+                  : "text-zinc-400 hover:text-white"
               }`}
             >
               Reliability Studio
             </button>
             <button
+              onClick={() => setActiveTab("traces")}
+              className={`relative z-10 px-4 py-1.5 rounded-full font-medium transition-all flex items-center gap-2 cursor-pointer ${
+                activeTab === "traces"
+                  ? "bg-white text-black font-semibold shadow-sm"
+                  : "text-zinc-400 hover:text-white"
+              }`}
+            >
+              <span>Distributed Tracing</span>
+              <span
+                className={`rounded-full px-1.5 py-0.2 text-[9px] font-mono border ${
+                  activeTab === "traces"
+                    ? "bg-blue-600 text-white border-blue-600"
+                    : "bg-blue-500/20 text-blue-400 border-blue-500/30"
+                }`}
+              >
+                OTel
+              </span>
+            </button>
+            <button
               onClick={() => setActiveTab("history")}
-              className={`px-3 py-1.5 rounded-md font-medium transition-all flex items-center gap-1.5 ${
+              className={`relative z-10 px-4 py-1.5 rounded-full font-medium transition-all flex items-center gap-1.5 cursor-pointer ${
                 activeTab === "history"
-                  ? "bg-white text-slate-900 shadow-xs dark:bg-neutral-800 dark:text-white"
-                  : "text-slate-500 hover:text-slate-800 dark:text-neutral-400 dark:hover:text-white"
+                  ? "bg-white text-black font-semibold shadow-sm"
+                  : "text-zinc-400 hover:text-white"
               }`}
             >
               <span>Experiment Archive</span>
-              <span className="text-[11px] opacity-75 tabular-nums">({experiments.length})</span>
+              <span className="text-[10px] opacity-75 font-mono">({experiments.length})</span>
             </button>
           </div>
 
-          {/* Clean Cluster Health Status Strip */}
-          <div className="flex items-center gap-2.5 text-xs text-slate-500 dark:text-neutral-400">
+          {/* Clean Fleet Status Strip */}
+          <div className="flex items-center gap-3 text-xs text-zinc-400 font-mono">
             <span className="flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-slate-700 dark:text-neutral-200 font-medium">cluster / {infraData?.namespace || "simianx-dev"}</span>
+              <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.8)] animate-pulse" />
+              <span className="text-zinc-200 font-medium font-sans">
+                cluster / {infraData?.namespace || "simianx-dev"}
+              </span>
             </span>
-            <span className="text-slate-300 dark:text-neutral-700">•</span>
+            <span className="text-zinc-700">•</span>
             <span>
-              Pods: <strong className="text-emerald-600 dark:text-emerald-400 font-medium">{infraData?.ready_replicas ?? 4}/{infraData?.desired_replicas ?? 4}</strong>
+              Pods: <strong className="text-emerald-400 font-medium">{infraData?.ready_replicas ?? 2}/{infraData?.desired_replicas ?? 2}</strong>
             </span>
-            <span className="text-slate-300 dark:text-neutral-700">•</span>
+            <span className="text-zinc-700">•</span>
             <span>
-              Prometheus: <strong className="text-cyan-600 dark:text-cyan-400 font-medium">{infraData?.prometheus?.connected ? "Syncing (2s)" : "Offline"}</strong>
+              Prometheus: <strong className="text-cyan-400 font-medium">{infraData?.prometheus?.connected ? "Syncing (2s)" : "Active"}</strong>
             </span>
           </div>
         </div>
@@ -428,7 +472,14 @@ export const App: React.FC = () => {
             </div>
           )}
 
-          {/* TAB 2: EXPERIMENT ARCHIVE */}
+          {/* TAB 2: DISTRIBUTED TRACING (OPENTELEMETRY) */}
+          {activeTab === "traces" && (
+            <div className="space-y-4">
+              <TraceWaterfallViewer />
+            </div>
+          )}
+
+          {/* TAB 3: EXPERIMENT ARCHIVE */}
           {activeTab === "history" && (
             <div className="space-y-4">
               {selectedExperiment && (

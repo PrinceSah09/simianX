@@ -4,12 +4,14 @@ import logging
 import time
 
 from fastapi import FastAPI
+from opentelemetry import trace
 from starlette.requests import Request
 from starlette.responses import Response
 
 from app.api.routes import experiments as experiments_router
 from app.api.routes import health as health_router
 from app.core.config import settings
+from app.core.otel import setup_opentelemetry
 from app.core.prometheus import get_prometheus_metrics, record_prometheus_request
 from app.core.telemetry import metrics_collector
 
@@ -31,6 +33,9 @@ app = FastAPI(
     openapi_url="/openapi.json",
 )
 
+# Initialize OpenTelemetry instrumentation
+setup_opentelemetry(app)
+
 
 @app.middleware("http")
 async def record_telemetry_middleware(request: Request, call_next) -> Response:
@@ -40,11 +45,18 @@ async def record_telemetry_middleware(request: Request, call_next) -> Response:
     duration_s = time.perf_counter() - start_time
     duration_ms = duration_s * 1000
 
+    # Inject active trace ID into response headers for client correlation
+    current_span = trace.get_current_span()
+    if current_span and current_span.get_span_context().is_valid:
+        trace_id = format(current_span.get_span_context().trace_id, "032x")
+        response.headers["X-Trace-Id"] = trace_id
+
     # Don't record internal metrics polling to avoid self-referential loop
     excluded_paths = (
         "/metrics",
         "/api/v1/metrics",
         "/api/v1/metrics/series",
+        "/api/v1/traces",
         "/docs",
         "/openapi.json",
     )

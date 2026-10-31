@@ -1,3 +1,9 @@
+export type ScenarioType =
+  | "traffic_burst"
+  | "latency_spike"
+  | "error_spike"
+  | "memory_saturation"
+
 export interface ExperimentResult {
   total_requests: number
   successful_requests: number
@@ -14,7 +20,7 @@ export interface ExperimentResult {
 
 export interface Experiment {
   id: string
-  scenario: "traffic_burst"
+  scenario: ScenarioType
   duration_seconds: number
   intensity: "low" | "moderate" | "high"
   target_endpoint: string
@@ -24,6 +30,49 @@ export interface Experiment {
   ended_at: string | null
   results: ExperimentResult
   error_message: string | null
+}
+
+export interface ChaosScenarioInfo {
+  id: ScenarioType
+  name: string
+  description: string
+  category: string
+  default_duration: number
+  intensities: ("low" | "moderate" | "high")[]
+  target_metric: string
+  slo_impact: string
+}
+
+export interface SpanDetail {
+  span_id: string
+  trace_id: string
+  name: string
+  parent_id: string | null
+  start_time: string
+  end_time: string
+  duration_ms: number
+  status: string
+  attributes: Record<string, any>
+}
+
+export interface TraceSummaryItem {
+  trace_id: string
+  root_name: string
+  span_count: number
+  start_time: string
+  duration_ms: number
+  status: "OK" | "ERROR"
+  status_code: number
+  scenario: string
+}
+
+export interface TraceDetail {
+  trace_id: string
+  root_name: string
+  start_time: string
+  duration_ms: number
+  status: "OK" | "ERROR"
+  spans: SpanDetail[]
 }
 
 export interface MetricsData {
@@ -64,7 +113,7 @@ export interface TimeSeriesResponse {
 }
 
 export interface ExperimentCreatePayload {
-  scenario: "traffic_burst"
+  scenario: ScenarioType
   duration_seconds: number
   intensity: "low" | "moderate" | "high"
 }

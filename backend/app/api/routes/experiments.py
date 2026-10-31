@@ -6,14 +6,18 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from app.core.config import settings
+from app.core.otel import trace_buffer
 from app.core.telemetry import metrics_collector
 from app.repositories.experiment import InMemoryExperimentRepository
 from app.schemas.experiment import (
+    ChaosScenarioListResponse,
     ExperimentCreate,
     ExperimentListResponse,
     ExperimentResponse,
     MetricsResponse,
     TimeSeriesResponse,
+    TraceDetailResponse,
+    TraceListResponse,
 )
 from app.schemas.infrastructure import InfrastructureResponse
 from app.services.experiment import ExperimentService
@@ -232,3 +236,47 @@ def trigger_fail(
         status_code=status_code,
         detail=f"Simulated error: HTTP {status_code}",
     )
+
+
+@router.get(
+    "/chaos/scenarios",
+    response_model=ChaosScenarioListResponse,
+    summary="List supported chaos engineering failure injection scenarios",
+)
+def list_chaos_scenarios(
+    service: ExperimentService = Depends(get_experiment_service),
+) -> ChaosScenarioListResponse:
+    """Return all available reliability scenarios (burst, latency jitter, error spikes, memory saturation)."""
+    scenarios = service.list_chaos_scenarios()
+    return ChaosScenarioListResponse(scenarios=scenarios)
+
+
+@router.get(
+    "/traces",
+    response_model=TraceListResponse,
+    summary="List recent OpenTelemetry distributed traces with span statistics",
+)
+def list_traces(
+    limit: int = Query(30, ge=1, le=100, description="Number of recent traces to return"),
+) -> TraceListResponse:
+    """Return recent traces recorded by OpenTelemetry in-memory buffer."""
+    traces = trace_buffer.get_traces_summary(limit=limit)
+    return TraceListResponse(traces=traces, total=len(traces))
+
+
+@router.get(
+    "/traces/{trace_id}",
+    response_model=TraceDetailResponse,
+    summary="Get detailed span waterfall hierarchy for a specific OpenTelemetry trace",
+)
+def get_trace_detail(
+    trace_id: str,
+) -> TraceDetailResponse:
+    """Retrieve full span tree with timings and attributes for waterfall rendering."""
+    detail = trace_buffer.get_trace_detail(trace_id)
+    if not detail:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Trace with ID '{trace_id}' not found in active telemetry buffer.",
+        )
+    return TraceDetailResponse.model_validate(detail)

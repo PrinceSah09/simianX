@@ -1,8 +1,11 @@
 import type {
+  ChaosScenarioInfo,
   Experiment,
   ExperimentCreatePayload,
   MetricsData,
   TimeSeriesResponse,
+  TraceDetail,
+  TraceSummaryItem,
 } from "../types/experiment"
 import type { BackendHealth } from "../types/health"
 
@@ -146,6 +149,41 @@ export async function scaleDeployment(
   if (!res.ok) {
     const err = await res.json().catch(() => ({}))
     throw new Error(err.detail || `Failed to scale deployment: HTTP ${res.status}`)
+  }
+  return res.json()
+}
+
+export async function fetchChaosScenarios(): Promise<ChaosScenarioInfo[]> {
+  const res = await fetch(`${BASE_URL}/api/v1/chaos/scenarios`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+  })
+  if (!res.ok) {
+    throw new Error(`Failed to fetch chaos scenarios: HTTP ${res.status}`)
+  }
+  const data = await res.json()
+  return data.scenarios
+}
+
+export async function fetchTraces(limit: number = 30): Promise<TraceSummaryItem[]> {
+  const res = await fetch(`${BASE_URL}/api/v1/traces?limit=${limit}`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+  })
+  if (!res.ok) {
+    throw new Error(`Failed to fetch traces: HTTP ${res.status}`)
+  }
+  const data = await res.json()
+  return data.traces
+}
+
+export async function fetchTraceDetail(traceId: string): Promise<TraceDetail> {
+  const res = await fetch(`${BASE_URL}/api/v1/traces/${traceId}`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+  })
+  if (!res.ok) {
+    throw new Error(`Failed to fetch trace detail for ${traceId}: HTTP ${res.status}`)
   }
   return res.json()
 }

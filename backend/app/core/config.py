@@ -18,6 +18,11 @@ class Settings(BaseSettings):
     prometheus_url: str = "http://prometheus:9090"
     pod_name: str = "local-node"
 
+    # OpenTelemetry & Tracing
+    otel_enabled: bool = True
+    otel_service_name: str = "simianx-backend"
+    otlp_endpoint: str | None = None
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

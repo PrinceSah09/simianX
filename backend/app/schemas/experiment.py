@@ -1,14 +1,19 @@
 """Pydantic schemas for SRE experiments and metrics."""
 
 from datetime import datetime
-from typing import Literal
+from typing import Any, Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
 
 class ExperimentCreate(BaseModel):
-    scenario: Literal["traffic_burst"] = Field(
+    scenario: Literal[
+        "traffic_burst",
+        "latency_spike",
+        "error_spike",
+        "memory_saturation",
+    ] = Field(
         default="traffic_burst",
         description="Reliability experiment scenario.",
     )
@@ -98,3 +103,61 @@ class TimeSeriesResponse(BaseModel):
     points: list[TimeSeriesPoint]
     window_seconds: int
     bucket_seconds: int
+
+
+class SpanDetail(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    span_id: str
+    trace_id: str
+    name: str
+    parent_id: str | None = None
+    start_time: str
+    end_time: str
+    duration_ms: float
+    status: str
+    attributes: dict[str, Any] = {}
+
+
+class TraceSummaryItem(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    trace_id: str
+    root_name: str
+    span_count: int
+    start_time: str
+    duration_ms: float
+    status: str
+    status_code: int = 200
+    scenario: str = "standard"
+
+
+class TraceListResponse(BaseModel):
+    traces: list[TraceSummaryItem]
+    total: int
+
+
+class TraceDetailResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    trace_id: str
+    root_name: str
+    start_time: str
+    duration_ms: float
+    status: str
+    spans: list[SpanDetail]
+
+
+class ChaosScenarioInfo(BaseModel):
+    id: str
+    name: str
+    description: str
+    category: str
+    default_duration: int
+    intensities: list[str]
+    target_metric: str
+    slo_impact: str
+
+
+class ChaosScenarioListResponse(BaseModel):
+    scenarios: list[ChaosScenarioInfo]

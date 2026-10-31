@@ -12,15 +12,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-# Copy pyproject.toml and install dependencies
-COPY pyproject.toml .
+# Copy requirements.txt and install dependencies
+COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir \
-    "fastapi[standard]>=0.115" \
-    "uvicorn[standard]>=0.32" \
-    "pydantic-settings>=2.6" \
-    "prometheus-client>=0.21.0" \
-    "httpx>=0.27"
+    pip install --no-cache-dir -r requirements.txt
 
 # Final lightweight runtime image
 FROM python:3.12-slim AS runner
