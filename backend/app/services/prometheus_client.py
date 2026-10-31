@@ -100,19 +100,7 @@ class PrometheusClusterService:
         if not self.is_prometheus_reachable():
             return None
 
-        # 1. Throughput (RPS)
-        rps_result = self.query_instant(
-            'sum(rate({__name__=~"(simianx|scalekart)_http_requests_total"}[10s]))'
-        )
-        rps = 0.0
-        if rps_result and rps_result[0].get("value"):
-            try:
-                val = float(rps_result[0]["value"][1])
-                rps = round(val, 2) if not (val != val) else 0.0
-            except (ValueError, TypeError):
-                rps = 0.0
-
-        # 2. Total requests counter
+        # 1. Total requests counter
         total_result = self.query_instant(
             'sum({__name__=~"(simianx|scalekart)_http_requests_total"})'
         )
@@ -123,12 +111,82 @@ class PrometheusClusterService:
             except (ValueError, TypeError):
                 total_requests = 0
 
+        # 2. Window-specific requests in last 10 seconds
+        window_req_res = self.query_instant(
+            'sum(increase({__name__=~"(simianx|scalekart)_http_requests_total"}[10s]))'
+        )
+        window_requests = 0
+        if window_req_res and window_req_res[0].get("value"):
+            try:
+                val = float(window_req_res[0]["value"][1])
+                if val == val and val >= 0:
+                    window_requests = int(round(val))
+            except (ValueError, TypeError):
+                window_requests = 0
+
+        # 3. Throughput (RPS) in last 10 seconds
+        rps_result = self.query_instant(
+            'sum(rate({__name__=~"(simianx|scalekart)_http_requests_total"}[10s]))'
+        )
+        rps = 0.0
+        if rps_result and rps_result[0].get("value"):
+            try:
+                val = float(rps_result[0]["value"][1])
+                if val == val and val >= 0:
+                    rps = round(val, 2)
+            except (ValueError, TypeError):
+                rps = 0.0
+
         # If zero total requests in cluster, return default zeroed snapshot
-        if total_requests == 0 and rps == 0.0:
+        if total_requests == 0 and rps == 0.0 and window_requests == 0:
             return None
 
-        # 3. Percentiles from aggregated histogram buckets across all pods
+        # Check if currently idle (no active traffic in window)
+        is_idle = (rps < 0.1) and (window_requests == 0)
+        if is_idle:
+            rps = 0.0
+            window_requests = 0
+
+        # 4. Total error count
+        err_cnt_res = self.query_instant(
+            'sum({__name__=~"(simianx|scalekart)_http_requests_total",status_code=~"[45].."})'
+        )
+        error_count = 0
+        if err_cnt_res and err_cnt_res[0].get("value"):
+            try:
+                error_count = int(float(err_cnt_res[0]["value"][1]))
+            except (ValueError, TypeError):
+                error_count = 0
+
+        # 5. Window-specific errors
+        window_errors = 0
+        if not is_idle:
+            window_err_res = self.query_instant(
+                'sum(increase({__name__=~"(simianx|scalekart)_http_requests_total",status_code=~"[45].."}[10s]))'
+            )
+            if window_err_res and window_err_res[0].get("value"):
+                try:
+                    val = float(window_err_res[0]["value"][1])
+                    if val == val and val >= 0:
+                        window_errors = int(round(val))
+                except (ValueError, TypeError):
+                    window_errors = 0
+
+        # 6. Error rates (window rate when active, 0.0 when idle)
+        window_error_rate = 0.0
+        if not is_idle and window_requests > 0:
+            window_error_rate = round((window_errors / window_requests) * 100.0, 2)
+
+        cumulative_error_rate = (
+            round((error_count / total_requests) * 100.0, 2)
+            if total_requests > 0
+            else 0.0
+        )
+
+        # 7. Percentiles from aggregated histogram buckets across all pods
         def get_quantile(q: float) -> float:
+            if is_idle:
+                return 0.0
             promql = (
                 f"histogram_quantile({q:.2f}, sum(rate("
                 '{__name__=~"(simianx|scalekart)_http_request_duration_seconds_bucket"}[10s])) by (le)) * 1000'
@@ -148,33 +206,7 @@ class PrometheusClusterService:
         p95 = get_quantile(0.95)
         p99 = get_quantile(0.99)
 
-        # 4. Error rate (tracks all 4xx client and 5xx server errors)
-        err_res = self.query_instant(
-            "clamp_min("
-            'sum(rate({__name__=~"(simianx|scalekart)_http_requests_total",status_code=~"[45].."}[10s])) '
-            '/ sum(rate({__name__=~"(simianx|scalekart)_http_requests_total"}[10s])), 0) * 100'
-        )
-        error_rate = 0.0
-        if err_res and err_res[0].get("value"):
-            try:
-                val = float(err_res[0]["value"][1])
-                if val == val and val >= 0:
-                    error_rate = round(val, 2)
-            except (ValueError, TypeError):
-                error_rate = 0.0
-
-        # 5. Error count
-        err_cnt_res = self.query_instant(
-            'sum({__name__=~"(simianx|scalekart)_http_requests_total",status_code=~"[45].."})'
-        )
-        error_count = 0
-        if err_cnt_res and err_cnt_res[0].get("value"):
-            try:
-                error_count = int(float(err_cnt_res[0]["value"][1]))
-            except (ValueError, TypeError):
-                error_count = 0
-
-        # 6. Status codes map
+        # 8. Status codes map
         status_res = self.query_instant(
             'sum({__name__=~"(simianx|scalekart)_http_requests_total"}) by (status_code)'
         )
@@ -187,6 +219,8 @@ class PrometheusClusterService:
                 except (ValueError, TypeError):
                     pass
 
+        active_error_rate = window_error_rate if not is_idle else cumulative_error_rate
+
         return {
             "total_requests": total_requests,
             "requests_per_second": rps,
@@ -195,16 +229,22 @@ class PrometheusClusterService:
             "p95_latency_ms": p95,
             "p99_latency_ms": p99,
             "error_count": error_count,
-            "error_rate": error_rate,
+            "error_rate": active_error_rate,
             "status_codes": status_codes,
-            "service_status": "degraded" if error_rate > 5 else "healthy",
+            "service_status": (
+                "unhealthy"
+                if active_error_rate > 15
+                else "degraded"
+                if active_error_rate > 5 or (not is_idle and p95 > 250)
+                else "healthy"
+            ),
             "uptime_seconds": round(
                 time.time() - getattr(self, "_start_time", time.time()), 1
             ),
             "timestamp": time.time(),
-            "window_requests": total_requests,
-            "window_errors": error_count,
-            "window_error_rate": error_rate,
+            "window_requests": window_requests,
+            "window_errors": window_errors,
+            "window_error_rate": window_error_rate,
             "window_duration_seconds": 10.0,
         }
 

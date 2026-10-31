@@ -51,16 +51,26 @@ async def record_telemetry_middleware(request: Request, call_next) -> Response:
         trace_id = format(current_span.get_span_context().trace_id, "032x")
         response.headers["X-Trace-Id"] = trace_id
 
-    # Don't record internal metrics polling to avoid self-referential loop
-    excluded_paths = (
+    # Don't record internal control-plane admin/polling endpoints to avoid telemetry pollution
+    admin_prefixes = (
         "/metrics",
+        "/health",
         "/api/v1/metrics",
-        "/api/v1/metrics/series",
         "/api/v1/traces",
+        "/api/v1/logs",
+        "/api/v1/infrastructure",
+        "/api/v1/experiments",
+        "/api/v1/chaos",
         "/docs",
+        "/redoc",
         "/openapi.json",
+        "/favicon.ico",
     )
-    if request.url.path not in excluded_paths:
+    is_admin = request.url.path == "/" or any(
+        request.url.path.startswith(prefix) for prefix in admin_prefixes
+    )
+
+    if not is_admin:
         metrics_collector.record_request(duration_ms, response.status_code)
         record_prometheus_request(
             request.method,

@@ -58,7 +58,7 @@ export const ExperimentHistoryTable: React.FC<ExperimentHistoryTableProps> = ({
                 <th className="pb-1.5 px-3 font-medium">Status</th>
                 <th className="pb-1.5 px-3 text-right font-medium">RPS</th>
                 <th className="pb-1.5 px-3 text-right font-medium">P95</th>
-                <th className="pb-1.5 pr-4 text-right font-medium">Requests</th>
+                <th className="pb-1.5 pr-6 text-right font-medium">Requests</th>
               </tr>
             </thead>
             <tbody>
@@ -106,13 +106,13 @@ export const ExperimentHistoryTable: React.FC<ExperimentHistoryTableProps> = ({
                       </span>
                     </td>
                     <td className="py-3.5 px-3 text-right font-medium tabular-nums text-[#1d1d1f]">
-                      {exp.results.achieved_rps}
+                      {exp.status === "running" ? "—" : exp.results.achieved_rps}
                     </td>
                     <td className="py-3.5 px-3 text-right tabular-nums text-[#6e6e73]">
-                      {exp.results.p95_latency_ms} ms
+                      {exp.status === "running" ? "—" : `${exp.results.p95_latency_ms} ms`}
                     </td>
-                    <td className="py-3.5 pl-3 pr-4 text-right tabular-nums text-[#6e6e73] rounded-r-[14px]">
-                      {exp.results.total_requests}
+                    <td className="py-3.5 pl-3 pr-6 text-right tabular-nums text-[#6e6e73] rounded-r-[14px]">
+                      {exp.status === "running" ? "—" : exp.results.total_requests}
                     </td>
                   </tr>
                 )

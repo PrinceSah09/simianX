@@ -11,8 +11,8 @@ interface TelemetryGaugesProps {
   onRefresh?: () => void
 }
 
-function formatMetric(value: number | null) {
-  if (value === null) return "0"
+function formatMetric(value: number | null, fallback = "0") {
+  if (value === null || value === undefined) return fallback
   return Number.isInteger(value) ? String(value) : value.toFixed(1)
 }
 
@@ -23,12 +23,12 @@ export const TelemetryGauges: React.FC<TelemetryGaugesProps> = ({
 }) => {
   const windowReqs =
     metrics?.window_requests ?? (metrics && metrics.requests_per_second > 0 ? 1 : 0)
-  const isWindowIdle = windowReqs === 0 && metrics?.requests_per_second === 0
+  const isWindowIdle = windowReqs === 0 && (metrics?.requests_per_second ?? 0) === 0
 
   const rpsVal = metrics ? metrics.requests_per_second : 0
   const rpsMax = metrics && metrics.requests_per_second > 40 ? 100 : 60
 
-  const p95Val = isWindowIdle ? null : metrics ? metrics.p95_latency_ms : null
+  const p95Val = isWindowIdle ? null : metrics && metrics.p95_latency_ms > 0 ? metrics.p95_latency_ms : null
   const latencyStatus: "healthy" | "degraded" | "unhealthy" | "idle" = isWindowIdle
     ? "idle"
     : metrics && metrics.p95_latency_ms > 150
@@ -112,16 +112,24 @@ export const TelemetryGauges: React.FC<TelemetryGaugesProps> = ({
           label="Throughput"
           display={formatMetric(metrics ? rpsVal : null)}
           unit="req/s"
-          caption={`${metrics?.total_requests ?? 0} requests`}
+          caption={
+            isWindowIdle
+              ? `${metrics?.total_requests ?? 0} total requests`
+              : `${metrics?.window_requests ?? 0} in active window`
+          }
           value={rpsVal}
           max={rpsMax}
           color="#0071e3"
         />
         <Donut
           label="P95 latency"
-          display={formatMetric(p95Val)}
+          display={isWindowIdle ? "—" : formatMetric(p95Val, "—")}
           unit="ms"
-          caption={`P50 ${metrics?.p50_latency_ms ?? 0} · P99 ${metrics?.p99_latency_ms ?? 0}`}
+          caption={
+            isWindowIdle
+              ? "Standby · No active traffic"
+              : `P50 ${metrics?.p50_latency_ms ? metrics.p50_latency_ms.toFixed(0) : "—"} · P99 ${metrics?.p99_latency_ms ? metrics.p99_latency_ms.toFixed(0) : "—"}`
+          }
           value={p95Val ?? 0}
           max={200}
           color={latencyColor}
@@ -130,7 +138,13 @@ export const TelemetryGauges: React.FC<TelemetryGaugesProps> = ({
           label="Error rate"
           display={formatMetric(isWindowIdle ? 0 : errorRateVal)}
           unit="percent"
-          caption={`${metrics?.error_count ?? 0} failed`}
+          caption={
+            isWindowIdle
+              ? metrics?.error_count
+                ? `${metrics.error_count} past errors recorded`
+                : "0 past errors recorded"
+              : `${metrics?.window_errors ?? 0} failed in window`
+          }
           value={isWindowIdle ? 0 : errorRateVal}
           max={25}
           color={errorColor}
@@ -139,7 +153,11 @@ export const TelemetryGauges: React.FC<TelemetryGaugesProps> = ({
           label="Availability"
           display={formatMetric(availabilityVal)}
           unit="percent"
-          caption={`${Math.round(metrics?.uptime_seconds ?? 0)}s uptime`}
+          caption={
+            metrics?.uptime_seconds
+              ? `${Math.round(metrics.uptime_seconds)}s uptime`
+              : "Healthy"
+          }
           value={availabilityVal}
           max={100}
           color="#30d158"

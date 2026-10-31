@@ -1,5 +1,6 @@
 """Route handlers for SRE Experiment Studio and runtime telemetry."""
 
+import asyncio
 import time
 from typing import Any
 from uuid import UUID
@@ -125,14 +126,29 @@ def get_metrics(
 ) -> MetricsResponse:
     """Expose live throughput, P95 latency, error rates, and request counts.
 
-    If Prometheus is reachable with multi-pod aggregated cluster metrics,
-    uses cluster-wide aggregated values (aggregate-then-quantile).
-    Otherwise seamlessly falls back to node-local metrics collector.
+    If an experiment is actively running, provides real-time instantaneous
+    workload measurements merged with cluster totals for zero lag.
+    When idle, uses cluster-wide Prometheus aggregated values.
     """
+    # 1. Real-time active experiment snapshot (zero Prometheus scrape lag)
+    active_snapshot = service.get_active_run_snapshot()
+    if active_snapshot is not None:
+        cluster_metrics = cluster_service.get_cluster_metrics()
+        if cluster_metrics:
+            active_snapshot["total_requests"] = (
+                cluster_metrics.get("total_requests", 0) + active_snapshot.get("total_requests", 0)
+            )
+            active_snapshot["uptime_seconds"] = cluster_metrics.get("uptime_seconds", 0.0)
+            if not active_snapshot.get("status_codes"):
+                active_snapshot["status_codes"] = cluster_metrics.get("status_codes", {})
+        return MetricsResponse.model_validate(active_snapshot)
+
+    # 2. Cluster-wide Prometheus aggregate metrics
     cluster_metrics = cluster_service.get_cluster_metrics()
     if cluster_metrics is not None:
         return MetricsResponse.model_validate(cluster_metrics)
 
+    # 3. Node-local collector fallback
     snapshot = service.get_metrics()
     return MetricsResponse.model_validate(snapshot)
 
@@ -213,13 +229,18 @@ def get_metrics_series(
     "/test-target",
     summary="Predefined local target for controlled experiment workloads",
 )
-def test_target() -> dict[str, str | float]:
+async def test_target(
+    delay: float = Query(0.0, ge=0.0, le=10.0, description="Injected server latency in seconds"),
+) -> dict[str, str | float]:
     """Lightweight test workload endpoint that records request telemetry."""
+    if delay > 0:
+        await asyncio.sleep(delay)
     now = time.time()
     return {
         "status": "ok",
         "service": "SimianX Test Service",
         "timestamp": now,
+        "delay_injected_s": delay,
     }
 
 

@@ -140,14 +140,18 @@ export const FloatingScenarioHUD: React.FC<FloatingScenarioHUDProps> = ({
             <div className="mt-3 flex items-center justify-between text-[12px]">
               <div>
                 <span className="font-semibold tabular-nums text-[#1d1d1f]">
-                  {metrics?.requests_per_second ? metrics.requests_per_second.toFixed(1) : "—"}
+                  {metrics?.requests_per_second && metrics.requests_per_second > 0
+                    ? metrics.requests_per_second.toFixed(1)
+                    : "—"}
                 </span>{" "}
                 <span className="text-[#86868b]">RPS</span>
               </div>
 
               <div>
                 <span className="font-semibold tabular-nums text-[#1d1d1f]">
-                  {metrics?.p95_latency_ms ? `${metrics.p95_latency_ms.toFixed(0)} ms` : "—"}
+                  {metrics?.p95_latency_ms && metrics.p95_latency_ms > 0
+                    ? `${metrics.p95_latency_ms.toFixed(0)} ms`
+                    : "—"}
                 </span>{" "}
                 <span className="text-[#86868b]">P95</span>
               </div>

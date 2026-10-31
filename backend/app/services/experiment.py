@@ -101,6 +101,8 @@ class ExperimentService:
         self._base_url = base_url
         self._active_task: asyncio.Task[None] | None = None
         self._active_experiment_id: UUID | None = None
+        self._active_run_start: float | None = None
+        self._active_run_samples: list[tuple[float, float, int]] = []  # (timestamp, duration_ms, status)
 
     def start_experiment(self, data: ExperimentCreate) -> Experiment:
         """Validate safety constraints and launch an experiment in the background."""
@@ -142,6 +144,8 @@ class ExperimentService:
         target_rps = INTENSITY_RPS_MAP.get(experiment.intensity, 10)
         duration_limit = experiment.duration_seconds
         start_time = time.time()
+        self._active_run_start = start_time
+        self._active_run_samples.clear()
         samples: list[tuple[float, int]] = []  # (duration_ms, status_code)
 
         target_url = f"{self._base_url}{TEST_TARGET_PATH}"
@@ -198,7 +202,8 @@ class ExperimentService:
                                     # Gaussian tail latency distribution (heavy tail)
                                     if random.random() < 0.40:
                                         simulated_delay = random.uniform(0.25, 0.95)
-                                        await asyncio.sleep(simulated_delay)
+                                        separator = "&" if "?" in req_url else "?"
+                                        req_url = f"{req_url}{separator}delay={simulated_delay:.3f}"
 
                                 with tracer.start_as_current_span(
                                     f"workload.{scenario}",
@@ -222,7 +227,7 @@ class ExperimentService:
                                         req_span.set_status(trace.StatusCode.ERROR, str(exc))
 
                                 samples.append((req_duration, status))
-                                self._collector.record_request(req_duration, status)
+                                self._active_run_samples.append((time.time(), req_duration, status))
 
                                 # Record individual request in granular live log stream
                                 now_str = datetime.now(UTC).strftime("%H:%M:%S.%f")[:-4]
@@ -287,6 +292,7 @@ class ExperimentService:
                     # Release memory hog buffer if allocated
                     if memory_hog is not None:
                         del memory_hog
+                    self._active_run_start = None
                     if self._active_experiment_id == experiment_id:
                         self._active_experiment_id = None
                         self._active_task = None
@@ -363,6 +369,74 @@ class ExperimentService:
 
     def list_recent(self, limit: int = 20) -> list[Experiment]:
         return self._repo.list_recent(limit=limit)
+
+    def get_active_run_snapshot(self) -> dict[str, Any] | None:
+        """Provide zero-lag real-time metrics during an active simulation run."""
+        if not self._active_experiment_id or self._active_run_start is None:
+            return None
+
+        now = time.time()
+        elapsed = max(0.1, now - self._active_run_start)
+        # Window: samples in the last 5 seconds (or all recent samples if elapsed < 5s)
+        recent = [s for s in self._active_run_samples if s[0] >= now - 5.0]
+        if not recent and self._active_run_samples:
+            recent = self._active_run_samples[-15:]
+
+        total_reqs = len(self._active_run_samples)
+        window_reqs = len(recent)
+        window_dur = max(0.5, min(5.0, elapsed))
+        rps = round(window_reqs / window_dur, 1) if window_dur > 0 else 0.0
+
+        status_codes: dict[str, int] = {}
+        for _, _, code in self._active_run_samples:
+            code_str = str(code)
+            status_codes[code_str] = status_codes.get(code_str, 0) + 1
+
+        if recent:
+            durations = sorted([s[1] for s in recent])
+            n = len(durations)
+            p50 = round(durations[int(0.50 * (n - 1))], 1)
+            p90 = round(durations[int(0.90 * (n - 1))], 1)
+            p95 = round(durations[int(0.95 * (n - 1))], 1)
+            p99 = round(durations[int(0.99 * (n - 1))], 1)
+            window_errs = sum(1 for s in recent if s[2] >= 400)
+            window_error_rate = (
+                round((window_errs / window_reqs) * 100.0, 1) if window_reqs > 0 else 0.0
+            )
+        else:
+            p50 = p90 = p95 = p99 = 0.0
+            window_errs = 0
+            window_error_rate = 0.0
+
+        total_errs = sum(1 for s in self._active_run_samples if s[2] >= 400)
+        total_error_rate = (
+            round((total_errs / total_reqs) * 100.0, 1) if total_reqs > 0 else 0.0
+        )
+
+        return {
+            "total_requests": total_reqs,
+            "requests_per_second": rps,
+            "p50_latency_ms": p50,
+            "p90_latency_ms": p90,
+            "p95_latency_ms": p95,
+            "p99_latency_ms": p99,
+            "error_count": total_errs,
+            "error_rate": total_error_rate,
+            "status_codes": status_codes,
+            "service_status": (
+                "unhealthy"
+                if window_error_rate > 15
+                else "degraded"
+                if window_error_rate > 5 or p95 > 250
+                else "healthy"
+            ),
+            "uptime_seconds": round(elapsed, 1),
+            "timestamp": now,
+            "window_requests": window_reqs,
+            "window_errors": window_errs,
+            "window_error_rate": window_error_rate,
+            "window_duration_seconds": round(window_dur, 1),
+        }
 
     def get_metrics(self) -> dict[str, float | int | str | dict[str, int]]:
         return self._collector.get_snapshot()
