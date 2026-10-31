@@ -51,9 +51,8 @@ export const TelemetryGauges: React.FC<TelemetryGaugesProps> = ({
     : 100
 
   return (
-    <div className="space-y-4">
-      {/* 4-Column Apple Vitals Grid */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div>
+      <div className="grid grid-cols-1 gap-px overflow-hidden rounded-[28px] bg-black/[0.08] sm:grid-cols-2 lg:grid-cols-4">
         {/* 1. Request Throughput */}
         <AppleRingGauge
           label="Throughput"
@@ -62,11 +61,8 @@ export const TelemetryGauges: React.FC<TelemetryGaugesProps> = ({
           max={rpsMax}
           color="cyan"
           status={isWindowIdle ? "idle" : "healthy"}
-          subtitle="Rolling 10s Window"
-          metaValues={[
-            { label: "Total", value: String(metrics?.total_requests ?? 0) },
-            { label: "Capacity", value: `${rpsMax} RPS` },
-          ]}
+          subtitle={`${metrics?.total_requests ?? 0} requests`}
+          metaValues={undefined}
         />
 
         {/* 2. P95 Latency */}
@@ -77,11 +73,8 @@ export const TelemetryGauges: React.FC<TelemetryGaugesProps> = ({
           max={200}
           color="purple"
           status={latencyStatus}
-          subtitle="SLO Target ≤ 50ms"
-          metaValues={[
-            { label: "P50", value: `${metrics?.p50_latency_ms ?? 0}ms` },
-            { label: "P99", value: `${metrics?.p99_latency_ms ?? 0}ms` },
-          ]}
+          subtitle={`P50 ${metrics?.p50_latency_ms ?? 0} · P99 ${metrics?.p99_latency_ms ?? 0}`}
+          metaValues={undefined}
         />
 
         {/* 3. Error Rate */}
@@ -92,11 +85,8 @@ export const TelemetryGauges: React.FC<TelemetryGaugesProps> = ({
           max={25}
           color="rose"
           status={errorStatus}
-          subtitle="HTTP 4xx / 5xx Errors"
-          metaValues={[
-            { label: "Errors", value: String(metrics?.error_count ?? 0) },
-            { label: "Budget", value: "99.0%" },
-          ]}
+          subtitle={`${metrics?.error_count ?? 0} failed requests`}
+          metaValues={undefined}
         />
 
         {/* 4. Availability */}
@@ -107,11 +97,8 @@ export const TelemetryGauges: React.FC<TelemetryGaugesProps> = ({
           max={100}
           color="emerald"
           status={availabilityVal < 98 ? "degraded" : "healthy"}
-          subtitle="Golden Signal Health"
-          metaValues={[
-            { label: "Uptime", value: `${Math.round(metrics?.uptime_seconds ?? 0)}s` },
-            { label: "SLO", value: "99.9%" },
-          ]}
+          subtitle={`${Math.round(metrics?.uptime_seconds ?? 0)}s uptime`}
+          metaValues={undefined}
         />
       </div>
     </div>

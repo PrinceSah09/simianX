@@ -1,11 +1,9 @@
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useRef, useState } from "react"
 import { motion } from "framer-motion"
 import {
-  Activity,
   CheckCircle2,
   Clock,
   Copy,
-  Layers,
   RefreshCw,
   Search,
 } from "lucide-react"
@@ -25,13 +23,15 @@ export const TraceWaterfallViewer: React.FC<TraceWaterfallViewerProps> = () => {
   const [isLoadingDetail, setIsLoadingDetail] = useState<boolean>(false)
   const [filterQuery, setFilterQuery] = useState<string>("")
   const [copied, setCopied] = useState<boolean>(false)
+  const selectedIdRef = useRef<string | null>(null)
+  selectedIdRef.current = selectedTraceId
 
   const loadTraces = async () => {
     setIsLoadingTraces(true)
     try {
       const data = await fetchTraces(40)
       setTraces(data)
-      if (data.length > 0 && !selectedTraceId) {
+      if (data.length > 0 && !selectedIdRef.current) {
         setSelectedTraceId(data[0].trace_id)
       }
     } catch (e) {
@@ -89,42 +89,26 @@ export const TraceWaterfallViewer: React.FC<TraceWaterfallViewerProps> = () => {
   return (
     <div className="space-y-4">
       {/* Apple-grade Header Bar */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-2xl bg-zinc-900/60 p-4 border border-white/[0.08] backdrop-blur-xl shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20 shadow-inner">
-            <Activity className="h-5 w-5" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-base font-semibold text-white tracking-tight">
-                OpenTelemetry Distributed Tracing
-              </h2>
-              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-400 border border-emerald-500/20">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                Live OTLP
-              </span>
-            </div>
-            <p className="text-xs text-zinc-400">
-              Interactive span waterfall and causality graph powered by OpenTelemetry SDK & Grafana Alloy
-            </p>
-          </div>
-        </div>
+      <div className="flex flex-col gap-5 rounded-[28px] bg-white px-6 py-8 sm:flex-row sm:items-end sm:justify-between sm:px-10">
+        <h2 className="text-[32px] font-semibold tracking-[-0.035em] text-[#1d1d1f] sm:text-[40px]">
+          Traces
+        </h2>
 
         <div className="flex items-center gap-2">
           <div className="relative">
-            <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-zinc-400" />
+            <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#86868b]" />
             <input
               type="text"
               placeholder="Filter trace ID, endpoint, scenario..."
               value={filterQuery}
               onChange={(e) => setFilterQuery(e.target.value)}
-              className="h-8 w-60 rounded-lg bg-zinc-950/80 pl-8 pr-3 text-xs text-white placeholder-zinc-500 border border-white/10 focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-blue-500/50 transition-all"
+              className="h-9 w-56 rounded-full bg-[#f5f5f7] pl-8 pr-4 text-[14px] text-[#1d1d1f] placeholder:text-[#86868b] focus:outline-none"
             />
           </div>
           <button
             onClick={loadTraces}
             disabled={isLoadingTraces}
-            className="flex h-8 items-center gap-1.5 rounded-lg bg-white/[0.06] hover:bg-white/[0.1] px-3 text-xs font-medium text-zinc-300 border border-white/10 transition-colors"
+            className="text-[15px] text-[#0066cc] hover:underline disabled:opacity-50"
           >
             <RefreshCw className={`h-3 w-3 ${isLoadingTraces ? "animate-spin" : ""}`} />
             Refresh
@@ -135,17 +119,16 @@ export const TraceWaterfallViewer: React.FC<TraceWaterfallViewerProps> = () => {
       {/* Main Grid: Left Traces List, Right Waterfall */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         {/* Left Column: Recent Traces Stream */}
-        <div className="lg:col-span-4 rounded-2xl bg-zinc-900/60 p-3.5 border border-white/[0.08] backdrop-blur-xl shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] flex flex-col h-[580px]">
-          <div className="flex items-center justify-between pb-2 mb-2 border-b border-white/[0.06] px-1">
-            <span className="text-xs font-medium text-zinc-400 uppercase tracking-wider">
-              Recorded Traces ({filteredTraces.length})
+        <div className="flex h-[580px] flex-col rounded-[28px] bg-white p-4 lg:col-span-4">
+          <div className="mb-2 flex items-center justify-between border-b border-black/[0.08] px-2 pb-3">
+            <span className="text-[13px] text-[#6e6e73]">
+              {filteredTraces.length} traces
             </span>
-            <span className="text-[11px] text-zinc-500 font-mono">ring buffer: 200</span>
           </div>
 
           <div className="flex-1 overflow-y-auto space-y-1.5 pr-1">
             {filteredTraces.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-48 text-center text-zinc-500 text-xs">
+              <div className="flex h-48 flex-col items-center justify-center text-center text-[15px] text-[#6e6e73]">
                 <Clock className="h-6 w-6 mb-2 opacity-40" />
                 No traces match your filter or buffer is empty.
               </div>
@@ -158,34 +141,28 @@ export const TraceWaterfallViewer: React.FC<TraceWaterfallViewerProps> = () => {
                   <button
                     key={trace.trace_id}
                     onClick={() => setSelectedTraceId(trace.trace_id)}
-                    className={`w-full text-left p-2.5 rounded-xl border transition-all ${
-                      isSelected
-                        ? "bg-blue-600/15 border-blue-500/40 shadow-sm"
-                        : "bg-white/[0.02] hover:bg-white/[0.05] border-white/[0.04]"
+                    className={`w-full rounded-2xl px-3 py-3 text-left transition-colors ${
+                      isSelected ? "bg-[#f5f5f7]" : "hover:bg-[#f5f5f7]"
                     }`}
                   >
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-medium text-white truncate max-w-[190px]">
+                      <span className="max-w-[190px] truncate text-[15px] font-medium text-[#1d1d1f]">
                         {trace.root_name}
                       </span>
                       <span
-                        className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-[10px] font-mono font-medium ${
-                          isError
-                            ? "bg-red-500/15 text-red-400 border border-red-500/30"
-                            : "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
-                        }`}
+                        className={`text-[13px] ${isError ? "text-[#ff3b30]" : "text-[#6e6e73]"}`}
                       >
                         {trace.status_code || (isError ? "500" : "200")}
                       </span>
                     </div>
 
-                    <div className="flex items-center justify-between text-[11px] text-zinc-400 font-mono">
-                      <span className="truncate max-w-[120px] text-zinc-500">
+                    <div className="mt-1 flex items-center justify-between text-[12px] text-[#86868b]">
+                      <span className="max-w-[120px] truncate">
                         {trace.trace_id.substring(0, 12)}...
                       </span>
                       <div className="flex items-center gap-2">
-                        <span className="text-zinc-300 font-medium">{trace.duration_ms}ms</span>
-                        <span className="text-zinc-500">({trace.span_count} spans)</span>
+                        <span className="font-medium text-[#1d1d1f]">{trace.duration_ms} ms</span>
+                        <span>{trace.span_count} spans</span>
                       </div>
                     </div>
                   </button>
@@ -198,50 +175,40 @@ export const TraceWaterfallViewer: React.FC<TraceWaterfallViewerProps> = () => {
         {/* Right Column: Waterfall Visualizer & Span Inspector */}
         <div className="lg:col-span-8 flex flex-col gap-4">
           {/* Top Panel: Waterfall Timeline Graph */}
-          <div className="rounded-2xl bg-zinc-900/60 p-4 border border-white/[0.08] backdrop-blur-xl shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] min-h-[340px] flex flex-col">
+          <div className="flex min-h-[340px] flex-col rounded-[28px] bg-white p-5">
             {isLoadingDetail ? (
-              <div className="flex flex-1 items-center justify-center text-zinc-500 text-xs">
+              <div className="flex flex-1 items-center justify-center text-[15px] text-[#6e6e73]">
                 <RefreshCw className="h-5 w-5 animate-spin mr-2" />
                 Loading trace spans...
               </div>
             ) : selectedTraceDetail ? (
               <div className="flex flex-col flex-1">
                 {/* Trace Banner Info */}
-                <div className="flex flex-wrap items-center justify-between pb-3 mb-3 border-b border-white/[0.06] gap-2">
+                <div className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-black/[0.08] pb-3">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-semibold text-white font-mono">
+                    <span className="max-w-[280px] truncate text-[13px] font-medium text-[#1d1d1f]">
                       Trace: {selectedTraceDetail.trace_id}
                     </span>
                     <button
                       onClick={() => copyToClipboard(selectedTraceDetail.trace_id)}
-                      className="p-1 rounded hover:bg-white/10 text-zinc-400 hover:text-white transition-colors"
+                      className="rounded p-1 text-[#86868b] hover:text-[#1d1d1f]"
                       title="Copy Trace ID"
                     >
                       {copied ? (
-                        <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+                        <CheckCircle2 className="h-3.5 w-3.5 text-[#0071e3]" />
                       ) : (
                         <Copy className="h-3.5 w-3.5" />
                       )}
                     </button>
                   </div>
-                  <div className="flex items-center gap-3 text-xs font-mono">
-                    <span className="text-zinc-400">
-                      Total Latency:{" "}
-                      <span className="text-white font-semibold">
-                        {selectedTraceDetail.duration_ms} ms
-                      </span>
-                    </span>
-                    <span className="text-zinc-400">
-                      Spans:{" "}
-                      <span className="text-white font-semibold">
-                        {selectedTraceDetail.spans.length}
-                      </span>
-                    </span>
+                  <div className="flex items-center gap-4 text-[13px] text-[#6e6e73]">
+                    <span>{selectedTraceDetail.duration_ms} ms</span>
+                    <span>{selectedTraceDetail.spans.length} spans</span>
                   </div>
                 </div>
 
                 {/* Timeline Ruler */}
-                <div className="relative h-6 border-b border-white/[0.08] text-[10px] text-zinc-500 font-mono flex justify-between px-2 mb-2 select-none">
+                <div className="relative mb-3 flex h-6 select-none justify-between border-b border-black/[0.08] px-1 text-[11px] text-[#86868b]">
                   <span>0ms</span>
                   <span>{Math.round(totalDurationMs * 0.25)}ms</span>
                   <span>{Math.round(totalDurationMs * 0.5)}ms</span>
@@ -267,10 +234,8 @@ export const TraceWaterfallViewer: React.FC<TraceWaterfallViewerProps> = () => {
                       <div
                         key={span.span_id}
                         onClick={() => setSelectedSpan(span)}
-                        className={`group relative p-2 rounded-xl border transition-all cursor-pointer ${
-                          isSpanSelected
-                            ? "bg-white/[0.08] border-white/20 shadow-md"
-                            : "bg-white/[0.02] hover:bg-white/[0.04] border-white/[0.04]"
+                        className={`cursor-pointer rounded-2xl p-3 transition-colors ${
+                          isSpanSelected ? "bg-[#f5f5f7]" : "hover:bg-[#f5f5f7]"
                         }`}
                       >
                         {/* Span row */}
@@ -285,34 +250,28 @@ export const TraceWaterfallViewer: React.FC<TraceWaterfallViewerProps> = () => {
                                   : "bg-purple-400"
                               }`}
                             />
-                            <span className="font-medium text-white tracking-tight">
+                            <span className="font-medium tracking-tight text-[#1d1d1f]">
                               {span.name}
                             </span>
                             {span.parent_id && (
-                              <span className="text-[10px] text-zinc-500 font-mono">
+                              <span className="text-[12px] text-[#86868b]">
                                 (child)
                               </span>
                             )}
                           </div>
-                          <span className="font-mono text-[11px] text-zinc-300">
+                          <span className="text-[13px] text-[#6e6e73]">
                             {span.duration_ms} ms
                           </span>
                         </div>
 
                         {/* Waterfall track & bar */}
-                        <div className="relative h-2 w-full rounded-full bg-zinc-950/80 overflow-hidden">
+                        <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-[#e8e8ed]">
                           <motion.div
                             initial={{ width: 0 }}
                             animate={{ width: `${widthPct}%` }}
                             transition={{ duration: 0.3, ease: "easeOut" }}
                             style={{ marginLeft: `${leftPct}%` }}
-                            className={`h-full rounded-full ${
-                              isError
-                                ? "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]"
-                                : idx === 0
-                                ? "bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.4)]"
-                                : "bg-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.4)]"
-                            }`}
+                            className={`h-full rounded-full ${isError ? "bg-[#ff3b30]" : "bg-[#0071e3]"}`}
                           />
                         </div>
                       </div>
@@ -321,75 +280,62 @@ export const TraceWaterfallViewer: React.FC<TraceWaterfallViewerProps> = () => {
                 </div>
               </div>
             ) : (
-              <div className="flex flex-1 items-center justify-center text-zinc-500 text-xs">
-                Select a trace from the left panel to inspect the waterfall.
+              <div className="flex flex-1 items-center justify-center text-[15px] text-[#6e6e73]">
+                Select a trace.
               </div>
             )}
           </div>
 
           {/* Bottom Panel: Apple Span Inspector Sheet */}
-          <div className="rounded-2xl bg-zinc-900/60 p-4 border border-white/[0.08] backdrop-blur-xl shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] min-h-[220px]">
-            <div className="flex items-center justify-between pb-2 mb-3 border-b border-white/[0.06]">
-              <div className="flex items-center gap-2">
-                <Layers className="h-4 w-4 text-blue-400" />
-                <span className="text-xs font-semibold text-white uppercase tracking-wider">
-                  Span Attributes Inspector
-                </span>
-              </div>
+          <div className="min-h-[220px] rounded-[28px] bg-white p-5">
+            <div className="mb-4 flex items-center justify-between border-b border-black/[0.08] pb-3">
+              <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-[#6e6e73]">
+                Span
+              </p>
               {selectedSpan && (
-                <span className="text-xs font-mono text-zinc-400">
-                  ID: <span className="text-zinc-200">{selectedSpan.span_id}</span>
-                </span>
+                <span className="text-[12px] text-[#86868b]">{selectedSpan.span_id}</span>
               )}
             </div>
 
             {selectedSpan ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
                 {/* Meta details */}
-                <div className="space-y-2 rounded-xl bg-zinc-950/50 p-3 border border-white/[0.04]">
-                  <div className="flex justify-between">
-                    <span className="text-zinc-500">Operation:</span>
-                    <span className="font-semibold text-white">{selectedSpan.name}</span>
+                <div className="space-y-2 rounded-2xl bg-[#f5f5f7] p-4 text-[14px]">
+                  <div className="flex justify-between gap-4">
+                    <span className="text-[#6e6e73]">Operation</span>
+                    <span className="font-medium">{selectedSpan.name}</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-zinc-500">Duration:</span>
-                    <span className="font-mono text-emerald-400 font-medium">
-                      {selectedSpan.duration_ms} ms
-                    </span>
+                  <div className="flex justify-between gap-4">
+                    <span className="text-[#6e6e73]">Duration</span>
+                    <span>{selectedSpan.duration_ms} ms</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-zinc-500">Status:</span>
-                    <span
-                      className={`font-mono font-medium ${
-                        selectedSpan.status.includes("ERROR")
-                          ? "text-red-400"
-                          : "text-emerald-400"
-                      }`}
-                    >
+                  <div className="flex justify-between gap-4">
+                    <span className="text-[#6e6e73]">Status</span>
+                    <span className={selectedSpan.status.includes("ERROR") ? "text-[#ff3b30]" : "text-[#1d1d1f]"}>
                       {selectedSpan.status}
                     </span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-zinc-500">Start Time:</span>
-                    <span className="font-mono text-zinc-300">
+                  <div className="flex justify-between gap-4">
+                    <span className="text-[#6e6e73]">Start</span>
+                    <span>
                       {selectedSpan.start_time.split("T")[1]?.replace("Z", "")}
                     </span>
                   </div>
                 </div>
 
                 {/* Attributes breakdown */}
-                <div className="rounded-xl bg-zinc-950/50 p-3 border border-white/[0.04] max-h-[140px] overflow-y-auto">
-                  <span className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider block mb-1.5">
-                    OTel Span Attributes
+                <div className="max-h-[140px] overflow-y-auto rounded-2xl bg-[#f5f5f7] p-4">
+                  <span className="mb-2 block text-[12px] font-semibold uppercase tracking-[0.08em] text-[#6e6e73]">
+                    Attributes
                   </span>
                   {Object.keys(selectedSpan.attributes).length === 0 ? (
-                    <span className="text-zinc-600 italic">No custom attributes.</span>
+                    <span className="text-[14px] text-[#86868b]">None</span>
                   ) : (
-                    <div className="space-y-1 font-mono text-[11px]">
+                    <div className="space-y-1 text-[13px]">
                       {Object.entries(selectedSpan.attributes).map(([key, val]) => (
-                        <div key={key} className="flex justify-between gap-2">
-                          <span className="text-blue-400/90 truncate max-w-[130px]">{key}:</span>
-                          <span className="text-zinc-200 truncate max-w-[180px]">
+                        <div key={key} className="flex justify-between gap-3">
+                          <span className="max-w-[140px] truncate text-[#0066cc]">{key}</span>
+                          <span className="max-w-[180px] truncate text-[#1d1d1f]">
                             {String(val)}
                           </span>
                         </div>
@@ -399,7 +345,7 @@ export const TraceWaterfallViewer: React.FC<TraceWaterfallViewerProps> = () => {
                 </div>
               </div>
             ) : (
-              <div className="flex items-center justify-center h-28 text-zinc-500 text-xs">
+              <div className="flex h-28 items-center justify-center text-[15px] text-[#6e6e73]">
                 Select any span above to inspect its metadata and telemetry tags.
               </div>
             )}

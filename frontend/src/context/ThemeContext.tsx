@@ -12,18 +12,7 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [theme, setThemeState] = useState<Theme>(() => {
-    // Check localStorage first
-    const saved = localStorage.getItem("simianx-theme") || localStorage.getItem("scalekart-theme")
-    if (saved === "light" || saved === "dark") {
-      return saved
-    }
-    // Check system preference
-    if (typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: light)").matches) {
-      return "light"
-    }
-    return "dark"
-  })
+  const [theme, setThemeState] = useState<Theme>("light")
 
   useEffect(() => {
     const root = document.documentElement

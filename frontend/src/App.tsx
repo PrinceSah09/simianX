@@ -302,14 +302,12 @@ export const App: React.FC = () => {
   }, [isCommandMenuOpen])
 
   return (
-    <div className="min-h-screen bg-[#050507] text-[#ededed] flex flex-col font-sans selection:bg-white selection:text-black relative overflow-x-hidden antialiased">
-      {/* Ambient Apple Keynote Light Cones */}
-      <div className="pointer-events-none fixed top-0 left-1/2 -translate-x-1/2 w-[1100px] h-[500px] bg-[radial-gradient(ellipse_60%_40%_at_50%_-10%,rgba(59,130,246,0.18),transparent_70%)] blur-3xl z-0" />
-      <div className="pointer-events-none fixed top-60 right-[-10%] w-[650px] h-[450px] bg-[radial-gradient(ellipse_50%_40%_at_50%_50%,rgba(168,85,247,0.10),transparent_70%)] blur-3xl z-0" />
-
-      {/* Top Navbar */}
+    <div className="min-h-screen bg-[#f5f5f7] text-[#1d1d1f]">
       <Navbar
         health={health}
+        activeTab={activeTab}
+        archiveCount={experiments.length}
+        onChangeTab={setActiveTab}
         onRefresh={() => {
           checkHealth()
           loadMetrics()
@@ -319,87 +317,27 @@ export const App: React.FC = () => {
         onOpenCommandMenu={() => setIsCommandMenuOpen(true)}
       />
 
-      {/* Main Content Area */}
-      <main className="relative z-10 mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 space-y-6">
-        {/* Apple Hero Header */}
-        <div className="pt-2 pb-1 text-center max-w-3xl mx-auto space-y-2.5">
-          <div className="inline-flex items-center gap-2 rounded-full bg-white/[0.04] px-3.5 py-1 text-[11px] font-mono text-zinc-400 border border-white/[0.08] backdrop-blur-xl shadow-inner">
-            <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span>SimianX SRE Resilience Platform v0.2.0</span>
-            <span className="text-zinc-600">•</span>
-            <span className="text-blue-400 font-semibold">OpenTelemetry OTLP</span>
-          </div>
-          <h1 className="text-3xl sm:text-5xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-b from-white via-white/95 to-white/50 font-sans">
-            Autonomous Cloud Resilience
+      <main className="mx-auto w-full max-w-[980px] flex-1 px-5 pb-20 pt-12">
+        <section className="flex flex-col items-center px-1 pb-12 pt-16 text-center sm:pb-16 sm:pt-24">
+          <h1
+            className="apple-rise max-w-[14ch] text-[44px] font-semibold leading-[1.04] tracking-[-0.045em] sm:text-[64px]"
+          >
+            Resilience, measured live.
           </h1>
-          <p className="text-xs sm:text-sm text-zinc-400 max-w-xl mx-auto leading-relaxed">
-            Real-time Golden Signal telemetry, OpenTelemetry distributed tracing, and automated chaos failure injection across Kubernetes & AWS EKS.
+          <p
+            className="apple-rise mt-5 max-w-[520px] text-[19px] leading-snug text-[#6e6e73] sm:text-[21px]"
+            style={{ animationDelay: "80ms" }}
+          >
+            Golden signals, traces, and controlled failure injection.
           </p>
-        </div>
-
-        {/* Apple Floating Segmented Nav & Fleet Strip */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/[0.06] pb-4">
-          <div className="relative inline-flex items-center gap-1.5 p-1 rounded-full bg-zinc-950/80 border border-white/[0.08] backdrop-blur-2xl shadow-xl text-xs">
-            <button
-              onClick={() => setActiveTab("studio")}
-              className={`relative z-10 px-4 py-1.5 rounded-full font-medium transition-all cursor-pointer ${
-                activeTab === "studio"
-                  ? "bg-white text-black font-semibold shadow-sm"
-                  : "text-zinc-400 hover:text-white"
-              }`}
-            >
-              Reliability Studio
-            </button>
-            <button
-              onClick={() => setActiveTab("traces")}
-              className={`relative z-10 px-4 py-1.5 rounded-full font-medium transition-all flex items-center gap-2 cursor-pointer ${
-                activeTab === "traces"
-                  ? "bg-white text-black font-semibold shadow-sm"
-                  : "text-zinc-400 hover:text-white"
-              }`}
-            >
-              <span>Distributed Tracing</span>
-              <span
-                className={`rounded-full px-1.5 py-0.2 text-[9px] font-mono border ${
-                  activeTab === "traces"
-                    ? "bg-blue-600 text-white border-blue-600"
-                    : "bg-blue-500/20 text-blue-400 border-blue-500/30"
-                }`}
-              >
-                OTel
-              </span>
-            </button>
-            <button
-              onClick={() => setActiveTab("history")}
-              className={`relative z-10 px-4 py-1.5 rounded-full font-medium transition-all flex items-center gap-1.5 cursor-pointer ${
-                activeTab === "history"
-                  ? "bg-white text-black font-semibold shadow-sm"
-                  : "text-zinc-400 hover:text-white"
-              }`}
-            >
-              <span>Experiment Archive</span>
-              <span className="text-[10px] opacity-75 font-mono">({experiments.length})</span>
-            </button>
-          </div>
-
-          {/* Clean Fleet Status Strip */}
-          <div className="flex items-center gap-3 text-xs text-zinc-400 font-mono">
-            <span className="flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.8)] animate-pulse" />
-              <span className="text-zinc-200 font-medium font-sans">
-                cluster / {infraData?.namespace || "simianx-dev"}
-              </span>
-            </span>
-            <span className="text-zinc-700">•</span>
-            <span>
-              Pods: <strong className="text-emerald-400 font-medium">{infraData?.ready_replicas ?? 2}/{infraData?.desired_replicas ?? 2}</strong>
-            </span>
-            <span className="text-zinc-700">•</span>
-            <span>
-              Prometheus: <strong className="text-cyan-400 font-medium">{infraData?.prometheus?.connected ? "Syncing (2s)" : "Active"}</strong>
-            </span>
-          </div>
-        </div>
+          <p className="apple-rise mt-4 text-[13px] text-[#86868b]" style={{ animationDelay: "140ms" }}>
+            {infraData?.namespace || "simianx"}
+            <span className="mx-2">·</span>
+            {infraData?.ready_replicas ?? "–"}/{infraData?.desired_replicas ?? "–"} pods
+            <span className="mx-2">·</span>
+            {infraData?.prometheus?.connected ? "Prometheus connected" : "Prometheus standby"}
+          </p>
+        </section>
 
         {/* Live Terminal Drawer */}
         <LiveLogsDrawer
@@ -410,10 +348,10 @@ export const App: React.FC = () => {
         />
 
         {/* TAB BODIES */}
-        <div className="min-h-[580px]">
+        <div className="min-h-[480px]">
           {/* TAB 1: RELIABILITY STUDIO */}
           {activeTab === "studio" && (
-            <div className="space-y-4 transition-all">
+            <div className="flex flex-col gap-4">
               {/* Speedometer Gauges */}
               <TelemetryGauges
                 metrics={metrics}
@@ -449,19 +387,18 @@ export const App: React.FC = () => {
               )}
 
               {/* Compact Recent History Preview */}
-              <div className="rounded-xl border border-slate-200/90 bg-white p-4 shadow-sm dark:border-neutral-800/80 dark:bg-neutral-950/70 dark:shadow-md">
-                <div className="flex items-center justify-between pb-3">
-                  <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
-                    Recent Runs ({experiments.slice(0, 5).length})
-                  </h3>
+              <div className="rounded-[28px] bg-white px-8 py-8 sm:px-10">
+                <div className="flex items-baseline justify-between">
+                  <h3 className="text-[21px] font-semibold tracking-[-0.03em]">Recent runs</h3>
                   <button
                     onClick={() => setActiveTab("history")}
-                    className="text-xs font-medium text-cyan-600 hover:text-cyan-700 dark:text-cyan-400 transition"
+                    className="text-[17px] text-[#0066cc] hover:underline"
                   >
-                    View Full Archive ({experiments.length}) →
+                    See all ›
                   </button>
                 </div>
                 <ExperimentHistoryTable
+                  embedded
                   experiments={experiments.slice(0, 5)}
                   selectedExperimentId={selectedExperiment?.id || activeExperiment?.id || null}
                   onSelectExperiment={(exp) => setSelectedExperiment(exp)}
@@ -496,6 +433,11 @@ export const App: React.FC = () => {
           )}
         </div>
       </main>
+
+      <footer className="mx-auto flex max-w-[980px] items-center justify-between px-6 pb-10 text-[12px] text-[#6e6e73]">
+        <p>SimianX · Cloud resilience</p>
+        <p>OpenTelemetry · Kubernetes</p>
+      </footer>
 
       {/* Command Palette (⌘K) */}
       <CommandMenu
