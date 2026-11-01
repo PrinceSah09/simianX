@@ -1,0 +1,14 @@
+global:
+  scrape_interval: 2s
+  evaluation_interval: 2s
+  scrape_timeout: 2s
+
+scrape_configs:
+  - job_name: "simianx-backend"
+    metrics_path: "/metrics"
+    static_configs:
+      - targets: ["simianx-backend:8000"]
+        labels:
+          app: "simianx-backend"
+          instance: "simianx-backend:8000"
+

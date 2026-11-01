@@ -109,7 +109,13 @@ export const FloatingScenarioHUD: React.FC<FloatingScenarioHUDProps> = ({
                   <span>·</span>
                   <span>{remainingSeconds}s remaining</span>
                   <span>·</span>
-                  <span className="capitalize">{activeExperiment.intensity}</span>
+                  <span>
+                    {activeExperiment.intensity === "low"
+                      ? "Gentle (10 RPS)"
+                      : activeExperiment.intensity === "moderate"
+                      ? "Nominal (25 RPS)"
+                      : "Maximum (50 RPS)"}
+                  </span>
                 </div>
               </div>
 

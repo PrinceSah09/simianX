@@ -168,6 +168,13 @@ export const LiveLogsDrawer: React.FC<LiveLogsDrawerProps> = ({
                           {log.durationMs}ms
                         </span>
 
+                        {/* Trace ID */}
+                        {log.traceId && (
+                          <span className="shrink-0 text-[10.5px] text-white/30 font-mono">
+                            #{log.traceId.replace(/^tr-/, "")}
+                          </span>
+                        )}
+
                         {/* Context note (only when error or chaos injected) */}
                         {log.message && (
                           <span

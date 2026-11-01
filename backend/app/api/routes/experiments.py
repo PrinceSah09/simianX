@@ -203,23 +203,33 @@ def get_metrics_series(
     aggregated time series across all pods. Otherwise falls back to
     node-local in-memory time series.
     """
+    # 1. Fetch real-time local points from in-memory collector
+    local_points = service.get_time_series(
+        window_seconds=window_seconds,
+        bucket_seconds=bucket_seconds,
+    )
+    local_requests_sum = sum(p["requests"] for p in local_points)
+
+    # 2. If Prometheus cluster points exist and have recorded cluster activity, use them
     cluster_points = cluster_service.get_cluster_time_series(
         window_seconds=window_seconds,
         bucket_seconds=bucket_seconds,
     )
-    if cluster_points is not None and len(cluster_points) > 0:
+    cluster_requests_sum = (
+        sum(p.get("requests", 0) for p in cluster_points)
+        if cluster_points
+        else 0
+    )
+
+    if cluster_points and cluster_requests_sum >= local_requests_sum and cluster_requests_sum > 0:
         return TimeSeriesResponse(
             points=cluster_points,
             window_seconds=window_seconds,
             bucket_seconds=bucket_seconds,
         )
 
-    points = service.get_time_series(
-        window_seconds=window_seconds,
-        bucket_seconds=bucket_seconds,
-    )
     return TimeSeriesResponse(
-        points=points,
+        points=local_points,
         window_seconds=window_seconds,
         bucket_seconds=bucket_seconds,
     )

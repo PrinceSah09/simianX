@@ -239,6 +239,13 @@ class ExperimentService:
                                 if status >= 400:
                                     extra += (" · " if extra else "") + "chaos fault injection"
 
+                                req_span_ctx = req_span.get_span_context() if req_span else None
+                                unique_trace_id = (
+                                    format(req_span_ctx.span_id, "016x")[:8]
+                                    if req_span_ctx and req_span_ctx.is_valid
+                                    else uuid4().hex[:8]
+                                )
+
                                 self.append_request_log({
                                     "id": f"req-{time.time():.4f}-{random.randint(1000, 9999)}",
                                     "timestamp": now_str,
@@ -246,7 +253,7 @@ class ExperimentService:
                                     "endpoint": endpoint_path,
                                     "status": status,
                                     "durationMs": round(req_duration, 1),
-                                    "traceId": str(experiment_id)[:8],
+                                    "traceId": f"tr-{unique_trace_id}",
                                     "message": extra,
                                 })
 
