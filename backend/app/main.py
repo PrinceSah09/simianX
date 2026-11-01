@@ -10,6 +10,7 @@ from starlette.responses import Response
 
 from app.api.routes import experiments as experiments_router
 from app.api.routes import health as health_router
+from app.api.routes import logs as logs_router
 from app.core.config import settings
 from app.core.otel import setup_opentelemetry
 from app.core.prometheus import get_prometheus_metrics, record_prometheus_request
@@ -85,6 +86,7 @@ async def record_telemetry_middleware(request: Request, call_next) -> Response:
 # Mount routers
 app.include_router(health_router.router)
 app.include_router(experiments_router.router)
+app.include_router(logs_router.router, prefix="/api/v1")
 
 
 @app.get("/metrics", include_in_schema=False)

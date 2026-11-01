@@ -6,7 +6,7 @@ import { ExperimentPanel } from "./components/ExperimentPanel"
 import { ExperimentResultsCard } from "./components/ExperimentResultsCard"
 import { FloatingScenarioHUD } from "./components/FloatingScenarioHUD"
 import { InfrastructurePanel } from "./components/InfrastructurePanel"
-import { LiveLogsDrawer } from "./components/LiveLogsDrawer"
+import { LiveLogsViewer } from "./components/LiveLogsViewer"
 import { Navbar } from "./components/Navbar"
 import { TelemetryGauges } from "./components/TelemetryGauges"
 import { TraceWaterfallViewer } from "./components/TraceWaterfallViewer"
@@ -29,19 +29,43 @@ import type { InfrastructureData } from "./types/infrastructure"
 import type { LogEntry } from "./types/telemetry"
 import { useToast } from "./context/ToastContext"
 
-type NavigationTab = "studio" | "traces" | "history"
+type NavigationTab = "studio" | "traces" | "logs" | "history"
 
 export const App: React.FC = () => {
   const { showToast } = useToast()
-  // Navigation tab state
-  const [activeTab, setActiveTab] = useState<NavigationTab>("studio")
+  // Navigation tab state (synced with URL hash)
+  const [activeTab, setActiveTab] = useState<NavigationTab>(() => {
+    const hash = window.location.hash.toLowerCase().replace(/^#\/?/, "")
+    if (hash === "logs") return "logs"
+    if (hash === "traces") return "traces"
+    if (hash === "archive" || hash === "history") return "history"
+    return "studio"
+  })
+
+  const handleTabChange = useCallback((tab: NavigationTab) => {
+    setActiveTab(tab)
+    window.location.hash = `#/${tab}`
+  }, [])
+
+  // Sync state if browser back/forward or hash changes
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.toLowerCase().replace(/^#\/?/, "")
+      if (hash === "logs") setActiveTab("logs")
+      else if (hash === "traces") setActiveTab("traces")
+      else if (hash === "archive" || hash === "history") setActiveTab("history")
+      else if (hash === "studio") setActiveTab("studio")
+    }
+    window.addEventListener("hashchange", handleHashChange)
+    return () => window.removeEventListener("hashchange", handleHashChange)
+  }, [])
 
   // Telemetry & metrics state
   const [metrics, setMetrics] = useState<MetricsData | null>(null)
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
   const [isStale, setIsStale] = useState<boolean>(false)
   const [isMetricsLoading, setIsMetricsLoading] = useState<boolean>(true)
-  const [health, setHealth] = useState<BackendHealth>({ status: "connecting" })
+  const [, setHealth] = useState<BackendHealth>({ status: "connecting" })
 
   // Experiments state
   const [experiments, setExperiments] = useState<Experiment[]>([])
@@ -55,7 +79,6 @@ export const App: React.FC = () => {
 
   // Drawer & Command states
   const [isCommandMenuOpen, setIsCommandMenuOpen] = useState<boolean>(false)
-  const [isLogsOpen, setIsLogsOpen] = useState<boolean>(false)
   const [logs, setLogs] = useState<LogEntry[]>([])
 
   // Infrastructure state
@@ -197,11 +220,11 @@ export const App: React.FC = () => {
   // Live granular request logs polling
   useEffect(() => {
     loadLiveLogs()
-    // Poll logs rapidly (400ms) when experiment running or console open
-    const isFast = activeExperiment?.status === "running" || isLogsOpen
+    // Poll logs rapidly (400ms) when experiment running or Logs tab active
+    const isFast = activeExperiment?.status === "running" || activeTab === "logs"
     const logsInterval = setInterval(loadLiveLogs, isFast ? 400 : 2500)
     return () => clearInterval(logsInterval)
-  }, [loadLiveLogs, activeExperiment?.status, isLogsOpen])
+  }, [loadLiveLogs, activeExperiment?.status, activeTab])
 
   // Active experiment tracking loop
   useEffect(() => {
@@ -368,21 +391,21 @@ export const App: React.FC = () => {
         setIsCommandMenuOpen(true)
       } else if ((e.key === "l" || e.key === "L") && !isCommandMenuOpen) {
         e.preventDefault()
-        setIsLogsOpen((prev) => !prev)
+        handleTabChange(activeTab === "logs" ? "studio" : "logs")
       }
     }
 
     window.addEventListener("keydown", handleGlobalKeyDown)
     return () => window.removeEventListener("keydown", handleGlobalKeyDown)
-  }, [isCommandMenuOpen])
+  }, [isCommandMenuOpen, activeTab, handleTabChange])
 
   return (
     <div className="min-h-screen bg-[#f5f5f7] text-[#1d1d1f]">
       <Navbar
-        health={health}
         activeTab={activeTab}
         archiveCount={experiments.length}
-        onChangeTab={setActiveTab}
+        isExperimentRunning={activeExperiment?.status === "running"}
+        onChangeTab={handleTabChange}
         onRefresh={() => {
           checkHealth()
           loadMetrics()
@@ -390,8 +413,6 @@ export const App: React.FC = () => {
           loadInfrastructure()
         }}
         onOpenCommandMenu={() => setIsCommandMenuOpen(true)}
-        isLogsOpen={isLogsOpen}
-        onToggleLogs={() => setIsLogsOpen((prev) => !prev)}
       />
 
       <main className="mx-auto w-full max-w-[980px] flex-1 px-5 pb-20 pt-16 sm:pt-20">
@@ -464,7 +485,20 @@ export const App: React.FC = () => {
             </div>
           )}
 
-          {/* TAB 3: EXPERIMENT ARCHIVE */}
+          {/* TAB 3: DEDICATED REQUEST LOGS CONSOLE */}
+          {activeTab === "logs" && (
+            <LiveLogsViewer
+              logs={logs}
+              onClearLogs={handleClearLogs}
+              onProbeTarget={handlePingTarget}
+              onNavigateToTraces={() => {
+                handleTabChange("traces")
+              }}
+              isExperimentRunning={activeExperiment?.status === "running"}
+            />
+          )}
+
+          {/* TAB 4: EXPERIMENT ARCHIVE */}
           {activeTab === "history" && (
             <div className="space-y-4">
               {selectedExperiment && (
@@ -499,14 +533,6 @@ export const App: React.FC = () => {
         onDismissCompleted={() => setCompletedExperiment(null)}
       />
 
-      {/* Slide-Up Bottom Terminal Console Drawer */}
-      <LiveLogsDrawer
-        isOpen={isLogsOpen}
-        onClose={() => setIsLogsOpen(false)}
-        logs={logs}
-        onClearLogs={handleClearLogs}
-      />
-
       {/* Command Palette (⌘K) */}
       <CommandMenu
         isOpen={isCommandMenuOpen}
@@ -521,8 +547,7 @@ export const App: React.FC = () => {
           if (activeExperiment) handleStopExperiment(activeExperiment.id)
         }}
         isExperimentRunning={activeExperiment?.status === "running"}
-        onToggleLogs={() => setIsLogsOpen((prev) => !prev)}
-        isLogsOpen={isLogsOpen}
+        onOpenLogs={() => handleTabChange("logs")}
         onPingTarget={handlePingTarget}
       />
     </div>

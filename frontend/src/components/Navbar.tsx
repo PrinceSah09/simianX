@@ -1,99 +1,92 @@
 import React from "react"
-import { Terminal } from "lucide-react"
-import type { BackendHealth } from "../types/health"
 
-type Tab = "studio" | "traces" | "history"
+export type Tab = "studio" | "traces" | "logs" | "history"
 
 interface NavbarProps {
-  health?: BackendHealth
   activeTab: Tab
   archiveCount: number
+  isExperimentRunning?: boolean
   onChangeTab: (tab: Tab) => void
   onRefresh?: () => void
   onOpenCommandMenu: () => void
-  isLogsOpen?: boolean
-  onToggleLogs?: () => void
 }
 
 const tabs: { id: Tab; label: string }[] = [
   { id: "studio", label: "Studio" },
   { id: "traces", label: "Traces" },
+  { id: "logs", label: "Logs" },
   { id: "history", label: "Archive" },
 ]
 
 export const Navbar: React.FC<NavbarProps> = ({
   activeTab,
   archiveCount,
+  isExperimentRunning = false,
   onChangeTab,
   onOpenCommandMenu,
-  isLogsOpen = false,
-  onToggleLogs,
 }) => {
   return (
-    <header className="fixed top-0 inset-x-0 z-50 h-12 border-b border-black/[0.08] bg-[rgba(251,251,253,0.72)] backdrop-blur-xl backdrop-saturate-150">
+    <header className="fixed top-0 inset-x-0 z-50 h-12 border-b border-black/[0.08] bg-[rgba(251,251,253,0.78)] backdrop-blur-xl backdrop-saturate-150">
       <div className="mx-auto flex h-full max-w-[980px] items-center justify-between px-5">
-        <button
-          onClick={() => onChangeTab("studio")}
-          className="text-[17px] font-semibold tracking-[-0.02em] text-[#1d1d1f]"
-        >
-          SimianX
-        </button>
+        {/* Left: Brand (Fixed width for exact center alignment of nav menu) */}
+        <div className="flex w-24 shrink-0 items-center justify-start sm:w-28">
+          <button
+            type="button"
+            onClick={() => onChangeTab("studio")}
+            className="text-[16px] font-semibold tracking-[-0.025em] text-[#1d1d1f] transition-opacity hover:opacity-70"
+          >
+            SimianX
+          </button>
+        </div>
 
-        <nav className="flex items-center gap-5 sm:gap-7">
+        {/* Center: Navigation Menu (Centered Apple HIG Navigation) */}
+        <nav className="flex items-center justify-center gap-6 sm:gap-8">
           {tabs.map((tab) => {
             const isArchive = tab.id === "history"
-            const showBadge = isArchive && archiveCount > 0
+            const isLogs = tab.id === "logs"
+            const showArchiveBadge = isArchive && archiveCount > 0
+            const showLogsBadge = isLogs && isExperimentRunning
+            const isSelected = activeTab === tab.id
 
             return (
               <button
                 key={tab.id}
+                type="button"
                 onClick={() => onChangeTab(tab.id)}
-                className={`inline-flex items-center gap-1.5 text-[12px] tracking-[-0.01em] transition-colors ${
-                  activeTab === tab.id
+                className={`group relative inline-flex items-center gap-1.5 py-1 text-[13px] tracking-[-0.01em] transition-colors ${
+                  isSelected
                     ? "font-medium text-[#1d1d1f]"
-                    : "text-[#1d1d1f]/70 hover:text-[#1d1d1f]"
+                    : "text-[#1d1d1f]/65 hover:text-[#1d1d1f]"
                 }`}
               >
                 <span>{tab.label}</span>
-                {showBadge && (
+                {showArchiveBadge && (
                   <span className="rounded-full bg-black/[0.06] px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-[#6e6e73]">
                     {archiveCount}
                   </span>
+                )}
+                {showLogsBadge && (
+                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#0071e3]" />
+                )}
+
+                {/* Subtle Apple Active Underline Indicator */}
+                {isSelected && (
+                  <span className="absolute -bottom-[13px] inset-x-0 h-[2px] rounded-full bg-[#1d1d1f]" />
                 )}
               </button>
             )
           })}
         </nav>
 
-        <div className="flex items-center gap-2.5 sm:gap-3">
-          {onToggleLogs && (
-            <button
-              onClick={onToggleLogs}
-              title="Toggle live logs (L)"
-              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[12px] font-medium transition-all ${
-                isLogsOpen
-                  ? "bg-[#1d1d1f] text-white shadow-sm"
-                  : "bg-black/[0.04] text-[#1d1d1f]/80 hover:bg-black/[0.08] hover:text-[#1d1d1f]"
-              }`}
-            >
-              <Terminal className="h-3.5 w-3.5" />
-              <span>Logs</span>
-              <kbd
-                className={`hidden font-sans text-[10.5px] sm:inline ${
-                  isLogsOpen ? "text-white/70" : "text-[#86868b]"
-                }`}
-              >
-                L
-              </kbd>
-            </button>
-          )}
-
+        {/* Right: Search Action (Balanced with left width) */}
+        <div className="flex w-24 shrink-0 items-center justify-end sm:w-28">
           <button
+            type="button"
             onClick={onOpenCommandMenu}
-            className="hidden items-center gap-2 rounded-full bg-black/[0.04] px-3 py-1 text-[12px] text-[#1d1d1f]/70 transition-colors hover:bg-black/[0.06] hover:text-[#1d1d1f] sm:inline-flex"
+            className="inline-flex items-center gap-2 rounded-full bg-black/[0.04] px-2.5 py-1 text-[12px] text-[#1d1d1f]/75 transition-all hover:bg-black/[0.07] hover:text-[#1d1d1f] active:scale-[0.98]"
           >
-            Search
-            <kbd className="font-sans text-[11px] text-[#86868b]">⌘K</kbd>
+            <span>Search</span>
+            <kbd className="font-sans text-[10.5px] text-[#86868b]">⌘K</kbd>
           </button>
         </div>
       </div>

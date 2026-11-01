@@ -6,8 +6,7 @@ interface CommandMenuProps {
   onStartExperiment: (intensity: "low" | "moderate" | "high") => void
   onStopExperiment: () => void
   isExperimentRunning: boolean
-  onToggleLogs: () => void
-  isLogsOpen: boolean
+  onOpenLogs?: () => void
   onPingTarget: () => void
 }
 
@@ -17,8 +16,7 @@ export const CommandMenu: React.FC<CommandMenuProps> = ({
   onStartExperiment,
   onStopExperiment,
   isExperimentRunning,
-  onToggleLogs,
-  isLogsOpen,
+  onOpenLogs,
   onPingTarget,
 }) => {
   const [query, setQuery] = useState("")
@@ -121,9 +119,9 @@ export const CommandMenu: React.FC<CommandMenuProps> = ({
                   <span>Probe the test endpoint</span>
                 </button>
               )}
-              {matches("telemetry terminal logs") && (
-                <button className={itemClass} onClick={() => { onToggleLogs(); onClose() }}>
-                  <span>{isLogsOpen ? "Hide live activity" : "Show live activity"}</span>
+              {matches("telemetry terminal logs") && onOpenLogs && (
+                <button className={itemClass} onClick={() => { onOpenLogs(); onClose() }}>
+                  <span>Open live request logs</span>
                   <span className="text-[13px] text-[#86868b]">L</span>
                 </button>
               )}

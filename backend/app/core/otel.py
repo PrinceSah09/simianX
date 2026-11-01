@@ -154,6 +154,10 @@ class InMemoryTraceBuffer:
                 if target.startswith(prefix):
                     return True
 
+        # 4. Filter out internal socket transport micro-spans that clutter traces
+        if name.endswith("http send") or name.endswith("http receive") or name in ("http send", "http receive", "connect"):
+            return True
+
         return False
 
     def add_span(self, span: ReadableSpan) -> None:

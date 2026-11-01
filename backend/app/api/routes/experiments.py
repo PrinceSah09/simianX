@@ -314,27 +314,5 @@ def get_trace_detail(
     return TraceDetailResponse.model_validate(detail)
 
 
-@router.get(
-    "/logs",
-    summary="Get recent granular request logs",
-)
-def get_live_logs(
-    limit: int = Query(150, ge=1, le=500),
-    service: ExperimentService = Depends(get_experiment_service),
-) -> dict[str, Any]:
-    """Retrieve granular real-time request logs for each individual HTTP call."""
-    items = service.get_recent_logs(limit=limit)
-    return {"items": items, "total": len(items)}
-
-
-@router.delete(
-    "/logs",
-    summary="Clear live request logs",
-)
-def clear_live_logs(
-    service: ExperimentService = Depends(get_experiment_service),
-) -> dict[str, str]:
-    """Clear all stored request logs."""
-    service.clear_logs()
-    return {"status": "cleared"}
+# Note: Dedicated /api/v1/logs routes are mounted via app.api.routes.logs
 

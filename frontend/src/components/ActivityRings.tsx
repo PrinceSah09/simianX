@@ -31,8 +31,13 @@ export const ActivityRings: React.FC<ActivityRingsProps> = ({
         {rings.map((ring, index) => {
           const radius = size / 2 - stroke / 2 - index * (stroke + gap)
           const circumference = 2 * Math.PI * radius
-          const ratio = ring.max > 0 ? Math.max(0, Math.min(1, ring.value / ring.max)) : 0
-          const offset = circumference * (1 - ratio)
+          let ratio = ring.max > 0 ? Math.max(0, Math.min(1, ring.value / ring.max)) : 0
+          if (ratio >= 0.985) {
+            ratio = 1
+          }
+          const isFull = ratio >= 1
+          const offset = isFull ? 0 : circumference * (1 - ratio)
+          const dashArray = isFull ? `${circumference + 1} ${circumference + 1}` : circumference
           return (
             <g key={index}>
               <circle
@@ -51,7 +56,7 @@ export const ActivityRings: React.FC<ActivityRingsProps> = ({
                 stroke={ring.color}
                 strokeWidth={stroke}
                 strokeLinecap="round"
-                strokeDasharray={circumference}
+                strokeDasharray={dashArray}
                 initial={{ strokeDashoffset: circumference }}
                 animate={{ strokeDashoffset: offset }}
                 transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1], delay: index * 0.06 }}

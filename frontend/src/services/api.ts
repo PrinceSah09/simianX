@@ -189,8 +189,22 @@ export async function fetchTraceDetail(traceId: string): Promise<TraceDetail> {
   return res.json()
 }
 
-export async function fetchLiveLogs(limit: number = 200): Promise<{ items: LogEntry[]; total: number }> {
-  const res = await fetch(`${BASE_URL}/api/v1/logs?limit=${limit}`, {
+export async function fetchLiveLogs(options?: number | {
+  limit?: number
+  level?: string
+  status_code?: number
+  min_duration_ms?: number
+  search?: string
+}): Promise<{ items: LogEntry[]; total: number }> {
+  const opts = typeof options === "number" ? { limit: options } : options
+  const params = new URLSearchParams()
+  params.set("limit", String(opts?.limit ?? 300))
+  if (opts?.level) params.set("level", opts.level)
+  if (opts?.status_code) params.set("status_code", String(opts.status_code))
+  if (opts?.min_duration_ms) params.set("min_duration_ms", String(opts.min_duration_ms))
+  if (opts?.search) params.set("search", opts.search)
+
+  const res = await fetch(`${BASE_URL}/api/v1/logs?${params.toString()}`, {
     method: "GET",
     headers: { "Content-Type": "application/json" },
   })

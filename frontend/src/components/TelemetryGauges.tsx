@@ -45,7 +45,14 @@ export const TelemetryGauges: React.FC<TelemetryGaugesProps> = ({
     ? Math.max(0, 100 - (metrics.window_error_rate ?? metrics.error_rate))
     : 0
 
-  const latencyHealth = p95Val === null ? 0 : Math.max(0, 100 - (p95Val / 200) * 100)
+  // Latency headroom: 100% full when within ideal healthy baseline (<= 30ms or idle standby).
+  // Headroom reduces smoothly down to 0% at 200ms+ during degradation/spikes.
+  const latencyHealth =
+    p95Val === null
+      ? (metrics ? 100 : 0)
+      : p95Val <= 30
+      ? 100
+      : Math.max(0, Math.min(100, 100 - ((p95Val - 30) / (200 - 30)) * 100))
   const isRunning = activeExperiment?.status === "running"
   const scenarioName = activeExperiment?.scenario.replaceAll("_", " ")
 

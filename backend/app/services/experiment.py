@@ -83,8 +83,32 @@ class ExperimentService:
         _global_request_logs.append(entry)
 
     @classmethod
-    def get_recent_logs(cls, limit: int = 150) -> list[dict[str, Any]]:
-        return list(_global_request_logs)[-limit:]
+    def get_recent_logs(
+        cls,
+        limit: int = 150,
+        level: str | None = None,
+        status_code: int | None = None,
+        min_duration_ms: float | None = None,
+        search: str | None = None,
+    ) -> list[dict[str, Any]]:
+        entries = list(_global_request_logs)
+        if level:
+            entries = [e for e in entries if e.get("level") == level.upper()]
+        if status_code:
+            entries = [e for e in entries if e.get("status") == status_code]
+        if min_duration_ms is not None:
+            entries = [e for e in entries if (e.get("durationMs") or 0) >= min_duration_ms]
+        if search:
+            q = search.lower().strip()
+            entries = [
+                e
+                for e in entries
+                if q in (e.get("endpoint") or "").lower()
+                or q in (e.get("traceId") or "").lower()
+                or q in (e.get("message") or "").lower()
+                or str(e.get("status", "")) == q
+            ]
+        return entries[-limit:]
 
     @classmethod
     def clear_logs(cls) -> None:
