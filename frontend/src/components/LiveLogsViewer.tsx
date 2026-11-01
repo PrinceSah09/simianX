@@ -133,17 +133,7 @@ export const LiveLogsViewer: React.FC<LiveLogsViewerProps> = ({
 
           {/* Quick Actions */}
           <div className="flex flex-wrap items-center gap-2.5">
-            {onProbeTarget && (
-              <button
-                type="button"
-                onClick={handleProbe}
-                disabled={isProbing}
-                className="inline-flex items-center gap-1.5 rounded-full bg-black/[0.04] px-4 py-2 text-[13px] font-medium text-[#1d1d1f] transition-all hover:bg-black/[0.08] active:scale-[0.98] disabled:opacity-50"
-              >
-                <Play className="h-3.5 w-3.5 fill-[#1d1d1f]" />
-                <span>{isProbing ? "Sending…" : "Probe Target"}</span>
-              </button>
-            )}
+            
 
             <button
               type="button"
@@ -163,6 +153,17 @@ export const LiveLogsViewer: React.FC<LiveLogsViewerProps> = ({
               )}
             </button>
 
+            {onProbeTarget && (
+              <button
+                type="button"
+                onClick={handleProbe}
+                disabled={isProbing}
+                className="inline-flex items-center gap-1.5 rounded-full bg-black/[0.04] px-4 py-2 text-[13px] font-medium text-[#1d1d1f] transition-all hover:bg-black/[0.08] active:scale-[0.98] disabled:opacity-50"
+              >
+                <Play className="h-3.5 w-3.5 fill-[#1d1d1f]" />
+                <span>{isProbing ? "Sending…" : "Probe Target"}</span>
+              </button>
+            )}
             <button
               type="button"
               onClick={onClearLogs}

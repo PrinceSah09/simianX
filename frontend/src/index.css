@@ -48,6 +48,17 @@ select {
   color: var(--ink);
 }
 
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
 :focus-visible {
   outline: 2px solid var(--blue);
   outline-offset: 3px;

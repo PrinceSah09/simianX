@@ -1,6 +1,7 @@
 import React, { useState } from "react"
 import { motion } from "framer-motion"
 import { Check, Terminal } from "lucide-react"
+import { AnimatedNumber } from "./AnimatedNumber"
 import { useToast } from "../context/ToastContext"
 import type { InfrastructureData } from "../types/infrastructure"
 
@@ -71,20 +72,15 @@ export const InfrastructurePanel: React.FC<InfrastructurePanelProps> = ({ data, 
   const compute = data.compute
   const totalRestarts = pods.reduce((acc, p) => acc + (p.restarts || 0), 0)
 
-  const stats = [
-    ["Fleet", `${ready}/${desired}`, totalRestarts === 0 ? "No restarts" : `${totalRestarts} restarts`],
-    ["Memory", compute?.total_memory_mb ? compute.total_memory_mb.toFixed(1) : "—", "MB allocated"],
-    ["Prometheus", String(prom?.healthy_targets_count ?? 0), prom?.connected ? "Connected" : "Standby"],
-    ["GitOps", "Synced", "Argo CD"],
-  ]
-
   return (
     <section className="overflow-hidden rounded-[28px] bg-white shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
       {/* Top Header & Replicas Segmented Control */}
       <div className="flex flex-col gap-5 px-6 py-8 sm:flex-row sm:items-end sm:justify-between sm:px-10">
         <div>
-          <h2 className="text-[32px] font-semibold tracking-[-0.035em] text-[#1d1d1f] sm:text-[40px]">
-            {ready}/{desired}
+          <h2 className="flex items-baseline text-[32px] font-semibold tracking-[-0.035em] text-[#1d1d1f] sm:text-[40px]">
+            <AnimatedNumber value={ready} />
+            <span className="mx-1 font-light text-[#86868b]/40">/</span>
+            <AnimatedNumber value={desired} />
           </h2>
           <p className="mt-1 text-[17px] text-[#6e6e73]">
             pods ready in {data.namespace || "simianx"}
@@ -92,8 +88,32 @@ export const InfrastructurePanel: React.FC<InfrastructurePanelProps> = ({ data, 
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          {/* Apple Sliding Segmented Control */}
-          <div className="flex items-center rounded-full bg-[#f5f5f7] p-1 text-[13px]">
+          {/* Tactile Apple Copy Command Pill - Matched h-9 height */}
+          <button
+            onClick={copyToClipboard}
+            type="button"
+            title={`Copy: ${cliCommand}`}
+            className={`h-9 inline-flex items-center gap-2 rounded-full px-4 text-[13px] font-medium transition-all duration-200 active:scale-[0.97] ${
+              copiedCli
+                ? "bg-[#34c759]/15 text-[#28a745]"
+                : "bg-[#f5f5f7] text-[#1d1d1f] hover:bg-black/[0.08]"
+            }`}
+          >
+            {copiedCli ? (
+              <>
+                <Check className="h-3.5 w-3.5 text-[#28a745]" />
+                <span>Copied kubectl</span>
+              </>
+            ) : (
+              <>
+                <Terminal className="h-3.5 w-3.5 text-[#6e6e73]" />
+                <span>Copy kubectl</span>
+              </>
+            )}
+          </button>
+
+          {/* Apple Sliding Segmented Control - Matched h-9 height */}
+          <div className="flex h-9 items-center rounded-full bg-[#f5f5f7] p-1 text-[13px]">
             {[1, 2, 4, 6, 8].map((count) => {
               const isSelected = desired === count
 
@@ -103,7 +123,7 @@ export const InfrastructurePanel: React.FC<InfrastructurePanelProps> = ({ data, 
                   type="button"
                   disabled={isScaling}
                   onClick={() => handleScale(count)}
-                  className={`relative rounded-full px-3 py-1 font-medium transition-colors ${
+                  className={`relative flex h-7 items-center justify-center rounded-full px-3 font-medium transition-colors ${
                     isSelected ? "text-[#1d1d1f]" : "text-[#6e6e73] hover:text-[#1d1d1f]"
                   } disabled:opacity-50`}
                 >
@@ -119,66 +139,88 @@ export const InfrastructurePanel: React.FC<InfrastructurePanelProps> = ({ data, 
               )
             })}
           </div>
-
-          {/* Tactile Apple Copy Command Pill */}
-          <button
-            onClick={copyToClipboard}
-            type="button"
-            title={`Copy: ${cliCommand}`}
-            className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[12px] font-medium transition-all duration-200 active:scale-[0.97] ${
-              copiedCli
-                ? "bg-[#34c759]/10 text-[#28a745]"
-                : "bg-black/[0.04] text-[#1d1d1f]/80 hover:bg-black/[0.08] hover:text-[#1d1d1f]"
-            }`}
-          >
-            {copiedCli ? (
-              <>
-                <Check className="h-3.5 w-3.5 text-[#28a745]" />
-                <span>Copied kubectl</span>
-              </>
-            ) : (
-              <>
-                <Terminal className="h-3.5 w-3.5 text-[#6e6e73]" />
-                <span>Copy kubectl</span>
-              </>
-            )}
-          </button>
         </div>
       </div>
 
       {/* 4 Stats Grid */}
       <div className="grid grid-cols-2 gap-px bg-black/[0.06] sm:grid-cols-4">
-        {stats.map(([label, value, note]) => (
-          <div key={label} className="bg-white px-4 py-8 text-center">
-            <p className="text-[28px] font-semibold leading-none tracking-[-0.04em] text-[#1d1d1f] sm:text-[32px]">
-              {value}
-            </p>
-            <p className="mt-2 text-[14px] text-[#1d1d1f]">{label}</p>
-            <p className="mt-0.5 text-[12px] text-[#86868b]">{note}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* Live Pods Fleet Grid */}
-      <div className="border-t border-black/[0.06] bg-[#fafafc] px-6 py-6 sm:px-10">
-        <div className="mb-4 flex items-baseline justify-between">
-          <h3 className="text-[14px] font-medium text-[#1d1d1f]">
-            Pod fleet
-            <span className="ml-1.5 text-[13px] text-[#86868b]">
-              ({pods.length})
-            </span>
-          </h3>
-          <p className="text-[12px] text-[#86868b]">
-            {ready === desired ? `${ready} ready` : `${ready} of ${desired} ready`} in {data.namespace || "simianx"}
+        <div className="bg-white px-4 py-8 text-center">
+          <p className="flex items-baseline justify-center text-[28px] font-semibold leading-none tracking-[-0.04em] text-[#1d1d1f] sm:text-[32px]">
+            <AnimatedNumber value={ready} />
+            <span className="mx-0.5 font-light text-[#86868b]/40">/</span>
+            <AnimatedNumber value={desired} />
+          </p>
+          <p className="mt-2 text-[14px] text-[#1d1d1f]">Fleet</p>
+          <p className="mt-0.5 text-[12px] text-[#86868b]">
+            {totalRestarts === 0 ? "No restarts" : `${totalRestarts} restarts`}
           </p>
         </div>
 
+        <div className="bg-white px-4 py-8 text-center">
+          <p className="flex items-baseline justify-center text-[28px] font-semibold leading-none tracking-[-0.04em] text-[#1d1d1f] sm:text-[32px]">
+            <AnimatedNumber
+              value={compute?.total_memory_mb ?? 0}
+              decimals={1}
+              fallback="—"
+            />
+            <span className="ml-1 text-[16px] font-normal text-[#86868b]">MB</span>
+          </p>
+          <p className="mt-2 text-[14px] text-[#1d1d1f]">Memory</p>
+          <p className="mt-0.5 text-[12px] text-[#86868b]">Allocated pool</p>
+        </div>
+
+        <div className="bg-white px-4 py-8 text-center">
+          <p className="flex items-baseline justify-center text-[28px] font-semibold leading-none tracking-[-0.04em] text-[#1d1d1f] sm:text-[32px]">
+            <AnimatedNumber
+              value={prom?.healthy_targets_count ?? 0}
+              decimals={0}
+            />
+            <span className="ml-1 text-[16px] font-normal text-[#86868b]">
+              {(prom?.healthy_targets_count ?? 0) === 1 ? "target" : "targets"}
+            </span>
+          </p>
+          <p className="mt-2 text-[14px] text-[#1d1d1f]">Prometheus</p>
+          <p className="mt-0.5 text-[12px] text-[#86868b]">
+            {prom?.connected ? "Connected" : "Standby"}
+          </p>
+        </div>
+
+        <div className="bg-white px-4 py-8 text-center">
+          <p className="text-[28px] font-semibold leading-none tracking-[-0.04em] text-[#1d1d1f] sm:text-[32px]">
+            Synced
+          </p>
+          <p className="mt-2 text-[14px] text-[#1d1d1f]">GitOps</p>
+          <p className="mt-0.5 text-[12px] text-[#86868b]">Argo CD · Main</p>
+        </div>
+      </div>
+
+      {/* Live Pods Fleet Grid */}
+      <div className="border-t border-black/[0.06] bg-white px-6 py-6 sm:px-10 sm:py-7">
+        <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-2">
+            <h3 className="text-[16px] font-semibold tracking-[-0.015em] text-[#1d1d1f]">
+              Pod Fleet
+            </h3>
+            <span className="rounded-full bg-black/[0.05] px-2.5 py-0.5 text-[11.5px] font-medium tabular-nums text-[#6e6e73]">
+              {pods.length}
+            </span>
+          </div>
+          <div className="inline-flex items-center gap-2 text-[12.5px] text-[#6e6e73]">
+            <span className="h-2 w-2 rounded-full bg-[#30d158]" />
+            <span className="font-medium text-[#1d1d1f]">
+              {ready === desired ? `${ready} ready` : `${ready} of ${desired} ready`}
+            </span>
+            <span className="text-black/20">·</span>
+            <span>{data.namespace || "simianx"}</span>
+          </div>
+        </div>
+
         {pods.length === 0 ? (
-          <div className="rounded-[20px] border border-dashed border-black/[0.08] bg-white py-8 text-center">
+          <div className="rounded-[18px] border border-dashed border-black/[0.08] bg-[#fbfbfd] py-10 text-center">
             <p className="text-[14px] text-[#6e6e73]">No running pod instances discovered.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
             {[...pods]
               .sort((a, b) => a.name.localeCompare(b.name))
               .map((pod, idx) => {
@@ -195,48 +237,54 @@ export const InfrastructurePanel: React.FC<InfrastructurePanelProps> = ({ data, 
                   ? "Starting"
                   : pod.phase || "Failed"
 
+                const memMb = pod.memory_mb || 0
+
                 return (
                   <div
                     key={pod.name}
-                    title={`Name: ${pod.name}\nIP: ${pod.ip || "Pending"}\nStatus: ${statusLabel}\nMemory: ${pod.memory_mb || 0} MB\nRestarts: ${pod.restarts}`}
-                    className="flex flex-col justify-between rounded-[20px] border border-black/[0.06] bg-white p-4 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all duration-200 hover:border-black/[0.12] hover:shadow-sm"
+                    className="group flex flex-col justify-between rounded-[16px] border border-black/[0.06] bg-[#fbfbfd] p-3.5 transition-all duration-150 hover:-translate-y-0.5 hover:bg-white hover:border-black/[0.12] hover:shadow-[0_4px_12px_rgba(0,0,0,0.04)]"
                   >
-                    {/* Top Row: Name on Left, Clean Status Indicator on Right */}
-                    <div className="flex items-center justify-between">
-                      <span className="text-[15px] font-semibold tracking-tight text-[#1d1d1f]">
-                        {friendlyName}
-                      </span>
-
-                      <span
-                        className={`inline-flex items-center gap-1.5 text-[12px] font-medium ${
-                          isReady
-                            ? "text-[#28a745]"
-                            : isStarting
-                            ? "text-[#d97706]"
-                            : "text-[#dc2626]"
-                        }`}
-                      >
+                    {/* Top Row: Identity on Left + Memory Pill on Right */}
+                    <div className="flex items-center justify-between min-w-0">
+                      <div className="flex items-center gap-2 min-w-0">
                         <span
-                          className={`h-1.5 w-1.5 rounded-full ${
+                          className={`h-2 w-2 shrink-0 rounded-full ${
                             isReady
-                              ? "bg-[#34c759]"
+                              ? "bg-[#30d158]"
                               : isStarting
                               ? "bg-[#ff9f0a] animate-pulse"
                               : "bg-[#ff3b30]"
                           }`}
+                          title={statusLabel}
                         />
-                        {statusLabel}
-                      </span>
+                        <div className="min-w-0">
+                          <p className="text-[13.5px] font-semibold tracking-[-0.01em] text-[#1d1d1f] leading-snug">
+                            {friendlyName}
+                          </p>
+                          <p className="text-[11px] text-[#86868b] tracking-tight truncate leading-tight">
+                            {pod.ip || "10.244.x.x"}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="shrink-0 flex items-center gap-1.5 ml-2">
+                        {pod.restarts > 0 && (
+                          <span className="rounded-full bg-[#ff9f0a]/10 px-1.5 py-0.5 text-[10.5px] font-medium text-[#d97706]" title={`${pod.restarts} restarts`}>
+                            {pod.restarts}r
+                          </span>
+                        )}
+                        <span className="inline-block rounded-full bg-black/[0.04] px-2.5 py-0.5 text-[11.5px] font-medium tabular-nums text-[#1d1d1f]">
+                          <AnimatedNumber value={memMb} decimals={0} suffix=" MB" />
+                        </span>
+                      </div>
                     </div>
 
-                    {/* Bottom Row: IP and Memory */}
-                    <div className="mt-3 flex items-center justify-between text-[12px] text-[#86868b]">
-                      <span className="font-mono text-[11.5px]">{pod.ip || "10.244.x.x"}</span>
-                      {pod.memory_mb ? (
-                        <span className="tabular-nums">{pod.memory_mb.toFixed(0)} MB</span>
-                      ) : (
-                        <span>{pod.restarts > 0 ? `${pod.restarts} restarts` : "0 restarts"}</span>
-                      )}
+                    {/* Apple Mini Memory / Storage Bar with Border */}
+                    <div className="mt-2.5 h-1.5 w-full rounded-full border border-black/[0.06] bg-black/[0.03] p-[1px] overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-[#0071e3] transition-all duration-500 ease-out"
+                        style={{ width: `${Math.min(100, Math.max(8, Math.round((memMb / 128) * 100)))}%` }}
+                      />
                     </div>
                   </div>
                 )

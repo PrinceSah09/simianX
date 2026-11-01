@@ -81,7 +81,7 @@ interface DonutProps {
   size?: number
   stroke?: number
   label: string
-  display: string
+  display: React.ReactNode
   unit: string
   caption?: string
 }

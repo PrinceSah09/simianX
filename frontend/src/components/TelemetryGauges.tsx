@@ -1,5 +1,6 @@
 import React from "react"
 import { ActivityRings, Donut } from "./ActivityRings"
+import { AnimatedNumber } from "./AnimatedNumber"
 import type { Experiment, MetricsData } from "../types/experiment"
 
 interface TelemetryGaugesProps {
@@ -9,11 +10,6 @@ interface TelemetryGaugesProps {
   lastUpdated: Date | null
   isStale: boolean
   onRefresh?: () => void
-}
-
-function formatMetric(value: number | null, fallback = "0") {
-  if (value === null || value === undefined) return fallback
-  return Number.isInteger(value) ? String(value) : value.toFixed(1)
 }
 
 export const TelemetryGauges: React.FC<TelemetryGaugesProps> = ({
@@ -104,8 +100,12 @@ export const TelemetryGauges: React.FC<TelemetryGaugesProps> = ({
             center={
               <div>
                 <p className="text-[13px] text-[#86868b]">{isRunning ? "Live" : "Idle"}</p>
-                <p className="mt-1 text-[28px] font-semibold leading-none tracking-[-0.04em] tabular-nums">
-                  {formatMetric(metrics ? rpsVal : null)}
+                <p className="mt-1 text-[28px] font-semibold leading-none tracking-[-0.04em] text-[#1d1d1f]">
+                  <AnimatedNumber
+                    value={metrics ? rpsVal : 0}
+                    decimals={1}
+                    fallback="0.0"
+                  />
                 </p>
                 <p className="mt-1 text-[12px] text-[#86868b]">req/s</p>
               </div>
@@ -117,7 +117,13 @@ export const TelemetryGauges: React.FC<TelemetryGaugesProps> = ({
       <div className="grid grid-cols-2 gap-px overflow-hidden rounded-[28px] bg-black/[0.08] lg:grid-cols-4">
         <Donut
           label="Throughput"
-          display={formatMetric(metrics ? rpsVal : null)}
+          display={
+            <AnimatedNumber
+              value={metrics ? rpsVal : 0}
+              decimals={1}
+              fallback="0.0"
+            />
+          }
           unit="req/s"
           caption={
             isWindowIdle
@@ -130,7 +136,17 @@ export const TelemetryGauges: React.FC<TelemetryGaugesProps> = ({
         />
         <Donut
           label="P95 latency"
-          display={isWindowIdle ? "—" : formatMetric(p95Val, "—")}
+          display={
+            isWindowIdle || p95Val === null ? (
+              "—"
+            ) : (
+              <AnimatedNumber
+                value={p95Val}
+                decimals={1}
+                fallback="—"
+              />
+            )
+          }
           unit="ms"
           caption={
             isWindowIdle
@@ -143,7 +159,13 @@ export const TelemetryGauges: React.FC<TelemetryGaugesProps> = ({
         />
         <Donut
           label="Error rate"
-          display={formatMetric(isWindowIdle ? 0 : errorRateVal)}
+          display={
+            <AnimatedNumber
+              value={isWindowIdle ? 0 : errorRateVal}
+              decimals={1}
+              fallback="0.0"
+            />
+          }
           unit="percent"
           caption={
             isWindowIdle
@@ -158,7 +180,13 @@ export const TelemetryGauges: React.FC<TelemetryGaugesProps> = ({
         />
         <Donut
           label="Availability"
-          display={formatMetric(availabilityVal)}
+          display={
+            <AnimatedNumber
+              value={availabilityVal}
+              decimals={1}
+              fallback="100.0"
+            />
+          }
           unit="percent"
           caption={
             metrics?.uptime_seconds
