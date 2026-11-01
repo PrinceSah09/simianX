@@ -22,48 +22,46 @@ Built on AWS EKS with Infrastructure as Code (Terraform), declarative Helm packa
 
 ## Architecture
 
-```
-                       ┌────────────────────────────────────────────────────────┐
-                       │              CI / CD & GitOps Pipeline                 │
-                       └────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph Pipeline["Continuous Integration & GitOps Delivery"]
+        Dev["Developer Push"] --> Jenkins["Jenkins CI Pipeline<br/>• Pytest + Ruff Linting<br/>• Trivy CVE Security Scan<br/>• Build & Push Immutable Docker Images"]
+        Jenkins -->|Pushes Images| ECR[("AWS ECR<br/>Private Container Registry")]
+        Jenkins -->|Auto-Commit Tag| GitOps["GitOps Manifest Repo<br/>• Helm values-dev / values-prod<br/>• Cryptographic Audit Trail"]
+        GitOps -.->|In-Cluster Pull| Argo["ArgoCD Controller<br/>• Automated Drift Detection<br/>• Zero-Downtime Rolling Update"]
+    end
 
-     Developer Push
-           │
-           ▼
-  ┌───────────────────────┐
-  │   Jenkins Pipeline    │  • Pytest + Ruff linting + TypeScript build
-  │     (Jenkinsfile)     │  • Trivy container security scanning
-  └───────────┬───────────┘  • Builds and pushes to AWS ECR
-              │
-              ├───► Pushes Images ─────────► [AWS ECR]
-              ▼
-  ┌───────────────────────┐
-  │ GitOps Repo Promotion │  • Updates image tag in Helm values-dev / values-prod
-  │ (Git Commit & Push)   │  • Git serves as single source of truth
-  └───────────┬───────────┘
-              │
-              ▼
-  ┌───────────────────────┐
-  │   Argo CD (In-EKS)    │  • Pulls target environment values
-  │      Controller       │  • Executes zero-downtime rolling update & self-heals
-  └───────────┬───────────┘
-              │
-              ▼
-  ┌─────────────────────────────────────────────────────────────────────┐
-  │                        AWS EKS Cluster                              │
-  │                                                                     │
-  │   [CloudFront CDN + AWS WAF] ──► [AWS ALB Ingress]                  │
-  │                                         │                           │
-  │         ┌───────────────────────────────┴───────────────┐           │
-  │         ▼                                               ▼           │
-  │   [Frontend Pods]                                 [Backend Pods]    │
-  │   (React 19 / Nginx)                           (FastAPI SRE Engine) │
-  │                                                         │           │
-  │                                                         ▼           │
-  │                                                [Prometheus Scraper] │
-  │                                                • Scrapes metrics    │
-  │                                                • P50/P90/P95/P99    │
-  └─────────────────────────────────────────────────────────────────────┘
+    subgraph Cluster["AWS EKS Multi-AZ Cluster (ap-south-1)"]
+        Edge["CloudFront CDN + AWS WAFv2<br/>(OWASP Top 10 + Rate Limiting)"] --> ALB["AWS Application Load Balancer<br/>(Public Subnets)"]
+        
+        Argo ==>|Reconciles State| Fleet
+        
+        subgraph Fleet["Workload Tier (Private /20 Subnets)"]
+            ALB --> FE["Frontend Pods<br/>React 19 + Nginx SPA"]
+            ALB --> BE["Backend Pod Fleet<br/>FastAPI SRE Engine (:8000)"]
+            BE --> Prom["Prometheus Scraper (:9090)<br/>• Real-time P50, P90, P95, P99 Histograms<br/>• 2-second Scrape Loop"]
+        end
+    end
+
+    classDef dev fill:#f8fafc,stroke:#94a3b8,stroke-width:1.5px,color:#0f172a;
+    classDef ci fill:#eff6ff,stroke:#3b82f6,stroke-width:1.5px,color:#1e40af;
+    classDef ecr fill:#fef3c7,stroke:#f59e0b,stroke-width:1.5px,color:#92400e;
+    classDef git fill:#faf5ff,stroke:#a855f7,stroke-width:1.5px,color:#6b21a8;
+    classDef cd fill:#ecfdf5,stroke:#10b981,stroke-width:1.5px,color:#065f46;
+    classDef cluster fill:#ffffff,stroke:#6b7280,stroke-width:1.5px;
+    classDef edge fill:#fef3c7,stroke:#f59e0b,stroke-width:1.5px,color:#92400e;
+    classDef app fill:#f0fdf4,stroke:#22c55e,stroke-width:1.5px,color:#166534;
+    classDef obs fill:#fff7ed,stroke:#f97316,stroke-width:1.5px,color:#9a3412;
+
+    class Dev dev;
+    class Jenkins ci;
+    class ECR ecr;
+    class GitOps git;
+    class Argo cd;
+    class Cluster,Fleet cluster;
+    class Edge,ALB edge;
+    class FE,BE app;
+    class Prom obs;
 ```
 
 ---
@@ -116,7 +114,7 @@ Deploy the entire platform into a local Kind Kubernetes cluster:
 make kind-up
 
 # 2. Port-forward backend service
-kubectl port-forward svc/scalekart-backend 8000:8000 -n simianx
+kubectl port-forward svc/simianx-backend 8000:8000 -n simianx
 
 # 3. Teardown when finished
 make kind-down
