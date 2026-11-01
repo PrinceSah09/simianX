@@ -8,7 +8,7 @@ import random
 import time
 from datetime import UTC, datetime
 from typing import Any
-from uuid import UUID
+from uuid import UUID, uuid4
 
 import httpx
 from opentelemetry import trace
