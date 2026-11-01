@@ -1,12 +1,12 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: simianx-root-prod
+  name: app-of-apps-prod
   namespace: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
   labels:
-    app.kubernetes.io/name: simianx-root
+    app.kubernetes.io/name: app-of-apps
     app.kubernetes.io/part-of: simianx-gitops
     environment: prod
 spec:
@@ -31,4 +31,3 @@ spec:
         duration: 5s
         factor: 2
         maxDuration: 3m
-

@@ -88,12 +88,12 @@ export const InfrastructurePanel: React.FC<InfrastructurePanelProps> = ({ data, 
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          {/* Tactile Apple Copy Command Pill - Matched h-9 height */}
+          {/* Tactile Apple Copy Command Pill - Matched h-9 height & rock-solid fixed width */}
           <button
             onClick={copyToClipboard}
             type="button"
             title={`Copy: ${cliCommand}`}
-            className={`h-9 inline-flex items-center gap-2 rounded-full px-4 text-[13px] font-medium transition-all duration-200 active:scale-[0.97] ${
+            className={`h-9 w-[138px] shrink-0 justify-center inline-flex items-center gap-2 rounded-full px-4 text-[13px] font-medium transition-all duration-200 active:scale-[0.97] ${
               copiedCli
                 ? "bg-[#34c759]/15 text-[#28a745]"
                 : "bg-[#f5f5f7] text-[#1d1d1f] hover:bg-black/[0.08]"
@@ -101,12 +101,12 @@ export const InfrastructurePanel: React.FC<InfrastructurePanelProps> = ({ data, 
           >
             {copiedCli ? (
               <>
-                <Check className="h-3.5 w-3.5 text-[#28a745]" />
+                <Check className="h-3.5 w-3.5 text-[#28a745] shrink-0" />
                 <span>Copied kubectl</span>
               </>
             ) : (
               <>
-                <Terminal className="h-3.5 w-3.5 text-[#6e6e73]" />
+                <Terminal className="h-3.5 w-3.5 text-[#6e6e73] shrink-0" />
                 <span>Copy kubectl</span>
               </>
             )}
@@ -189,8 +189,8 @@ export const InfrastructurePanel: React.FC<InfrastructurePanelProps> = ({ data, 
           <p className="text-[28px] font-semibold leading-none tracking-[-0.04em] text-[#1d1d1f] sm:text-[32px]">
             Synced
           </p>
-          <p className="mt-2 text-[14px] text-[#1d1d1f]">GitOps</p>
-          <p className="mt-0.5 text-[12px] text-[#86868b]">Argo CD · Main</p>
+          <p className="mt-2 text-[14px] text-[#1d1d1f]">App of Apps</p>
+          <p className="mt-0.5 text-[12px] text-[#86868b]">Argo CD GitOps</p>
         </div>
       </div>
 

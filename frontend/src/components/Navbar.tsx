@@ -16,7 +16,7 @@ const tabs: { id: Tab; label: string }[] = [
   { id: "studio", label: "Studio" },
   { id: "traces", label: "Traces" },
   { id: "logs", label: "Logs" },
-  { id: "history", label: "Archive" },
+  { id: "history", label: "History" },
 ]
 
 export const Navbar: React.FC<NavbarProps> = ({

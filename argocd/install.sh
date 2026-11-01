@@ -17,9 +17,9 @@ echo "==> Waiting for ArgoCD Server to become ready..."
 kubectl rollout status deployment/argocd-server -n argocd --timeout=180s
 
 # 4. Deploy SimianX GitOps App-of-Apps Root Orchestrators (Dev & Prod)
-echo "==> Deploying SimianX App-of-Apps Root GitOps Applications..."
-kubectl apply -f "$(dirname "$0")/root-app-dev.yaml"
-kubectl apply -f "$(dirname "$0")/root-app-prod.yaml"
+echo "==> Deploying SimianX App of Apps GitOps Applications..."
+kubectl apply -f "$(dirname "$0")/app-of-apps-dev.yaml"
+kubectl apply -f "$(dirname "$0")/app-of-apps-prod.yaml"
 
 # 5. Output credentials
 echo "=========================================================="

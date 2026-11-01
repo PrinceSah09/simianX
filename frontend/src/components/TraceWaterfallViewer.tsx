@@ -197,16 +197,9 @@ export const TraceWaterfallViewer: React.FC<TraceWaterfallViewerProps> = () => {
       <section className="overflow-hidden rounded-[28px] bg-white p-6 shadow-[0_1px_3px_rgba(0,0,0,0.02)] sm:p-8">
         <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <div className="flex items-center gap-2">
-              <span className="text-[12px] font-semibold uppercase tracking-[0.08em] text-[#6e6e73]">
-                Observability
-              </span>
-              <span className="text-[12px] text-black/20">·</span>
-              <span className="inline-flex items-center gap-1.5 text-[12px] font-medium text-[#0071e3]">
-                <span className="h-2 w-2 rounded-full bg-[#34c759]" />
-                OpenTelemetry live
-              </span>
-            </div>
+            <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-[#6e6e73]">
+              Observability
+            </p>
 
             <h2 className="mt-1 text-[32px] font-semibold tracking-[-0.035em] text-[#1d1d1f] sm:text-[38px]">
               Distributed Traces

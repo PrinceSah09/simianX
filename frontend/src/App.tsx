@@ -1,7 +1,9 @@
-import React, { useCallback, useEffect, useState } from "react"
+import React, { useCallback, useEffect, useState, useRef } from "react"
+import { motion, AnimatePresence } from "framer-motion"
 
 import { CommandMenu } from "./components/CommandMenu"
 import { ExperimentHistoryTable } from "./components/ExperimentHistoryTable"
+import { ExperimentDetailModal } from "./components/ExperimentDetailModal"
 import { ExperimentPanel } from "./components/ExperimentPanel"
 import { ExperimentResultsCard } from "./components/ExperimentResultsCard"
 import { FloatingScenarioHUD } from "./components/FloatingScenarioHUD"
@@ -44,12 +46,14 @@ export const App: React.FC = () => {
 
   const handleTabChange = useCallback((tab: NavigationTab) => {
     setActiveTab(tab)
+    setInspectingExperiment(null)
     window.location.hash = `#/${tab}`
   }, [])
 
   // Sync state if browser back/forward or hash changes
   useEffect(() => {
     const handleHashChange = () => {
+      setInspectingExperiment(null)
       const hash = window.location.hash.toLowerCase().replace(/^#\/?/, "")
       if (hash === "logs") setActiveTab("logs")
       else if (hash === "traces") setActiveTab("traces")
@@ -71,6 +75,7 @@ export const App: React.FC = () => {
   const [experiments, setExperiments] = useState<Experiment[]>([])
   const [activeExperiment, setActiveExperiment] = useState<Experiment | null>(null)
   const [selectedExperiment, setSelectedExperiment] = useState<Experiment | null>(null)
+  const [inspectingExperiment, setInspectingExperiment] = useState<Experiment | null>(null)
   const [completedExperiment, setCompletedExperiment] = useState<Experiment | null>(null)
   const [isStarting, setIsStarting] = useState<boolean>(false)
   const [isStopping, setIsStopping] = useState<boolean>(false)
@@ -80,6 +85,7 @@ export const App: React.FC = () => {
   // Drawer & Command states
   const [isCommandMenuOpen, setIsCommandMenuOpen] = useState<boolean>(false)
   const [logs, setLogs] = useState<LogEntry[]>([])
+  const resultsCardRef = useRef<HTMLDivElement>(null)
 
   // Infrastructure state
   const [infraData, setInfraData] = useState<InfrastructureData | null>(null)
@@ -225,6 +231,20 @@ export const App: React.FC = () => {
     const logsInterval = setInterval(loadLiveLogs, isFast ? 400 : 2500)
     return () => clearInterval(logsInterval)
   }, [loadLiveLogs, activeExperiment?.status, activeTab])
+
+  // Baseline synthetic heartbeat: 1 request per second when traffic is idle to keep telemetry rings active
+  useEffect(() => {
+    if (activeExperiment?.status === "running") return
+
+    // Initial heartbeat ping
+    pingTestTarget().catch(() => {})
+
+    const heartbeatInterval = setInterval(() => {
+      pingTestTarget().catch(() => {})
+    }, 1000)
+
+    return () => clearInterval(heartbeatInterval)
+  }, [activeExperiment?.status])
 
   // Active experiment tracking loop
   useEffect(() => {
@@ -448,17 +468,49 @@ export const App: React.FC = () => {
                 onClearError={() => setErrorMessage(null)}
               />
 
-              {/* Results Summary Card */}
-              {(selectedExperiment || (activeExperiment && activeExperiment.status !== "running")) && (
-                <ExperimentResultsCard
-                  experiment={selectedExperiment || activeExperiment}
-                />
-              )}
+              {/* Results Summary Card with Smooth Spring Expansion */}
+              <AnimatePresence>
+                {(selectedExperiment || (activeExperiment && activeExperiment.status !== "running")) && (
+                  <motion.div
+                    ref={resultsCardRef}
+                    initial={{ opacity: 0, height: 0, y: -16 }}
+                    animate={{ opacity: 1, height: "auto", y: 0 }}
+                    exit={{ opacity: 0, height: 0, y: -16 }}
+                    transition={{ type: "spring", damping: 30, stiffness: 350 }}
+                    className="overflow-hidden"
+                  >
+                    <ExperimentResultsCard
+                      experiment={selectedExperiment || activeExperiment}
+                      onClose={() => setSelectedExperiment(null)}
+                    />
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
               {/* Compact Recent History Preview */}
-              <div className="rounded-[28px] bg-white px-8 py-8 sm:px-10">
+              <div className="rounded-[28px] bg-white px-8 py-8 sm:px-10 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
                 <div className="flex items-baseline justify-between">
-                  <h3 className="text-[21px] font-semibold tracking-[-0.03em]">Recent runs</h3>
+                  <div
+                    onClick={() => {
+                      if (selectedExperiment) {
+                        setSelectedExperiment(null)
+                      } else if (experiments.length > 0) {
+                        setSelectedExperiment(experiments[0])
+                        setTimeout(() => {
+                          resultsCardRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" })
+                        }, 100)
+                      }
+                    }}
+                    className="group flex items-center gap-2.5 cursor-pointer select-none"
+                    title="Click to toggle expanded results view"
+                  >
+                    <h3 className="text-[21px] font-semibold tracking-[-0.03em] group-hover:text-[#0071e3] transition-colors">
+                      Recent runs
+                    </h3>
+                    <span className="text-[11.5px] font-medium text-[#0071e3] bg-[#0071e3]/10 px-2.5 py-0.5 rounded-full transition-transform group-hover:scale-105">
+                      {selectedExperiment ? "Collapse" : "Click to expand view"}
+                    </span>
+                  </div>
                   <button
                     onClick={() => setActiveTab("history")}
                     className="text-[17px] text-[#0066cc] hover:underline"
@@ -470,7 +522,12 @@ export const App: React.FC = () => {
                   embedded
                   experiments={experiments.slice(0, 5)}
                   selectedExperimentId={selectedExperiment?.id || activeExperiment?.id || null}
-                  onSelectExperiment={(exp) => setSelectedExperiment(exp)}
+                  onSelectExperiment={(exp) => {
+                    setSelectedExperiment(exp)
+                    setTimeout(() => {
+                      resultsCardRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" })
+                    }, 100)
+                  }}
                   onRefresh={loadHistory}
                   isLoading={isHistoryLoading}
                 />
@@ -498,18 +555,19 @@ export const App: React.FC = () => {
             />
           )}
 
-          {/* TAB 4: EXPERIMENT ARCHIVE */}
+          {/* TAB 4: EXPERIMENT HISTORY */}
           {activeTab === "history" && (
             <div className="space-y-4">
-              {selectedExperiment && (
-                <ExperimentResultsCard experiment={selectedExperiment} />
-              )}
               <ExperimentHistoryTable
                 experiments={experiments}
-                selectedExperimentId={selectedExperiment?.id || null}
-                onSelectExperiment={(exp) => setSelectedExperiment(exp)}
+                selectedExperimentId={inspectingExperiment?.id || null}
+                onSelectExperiment={(exp) => setInspectingExperiment(exp)}
                 onRefresh={loadHistory}
                 isLoading={isHistoryLoading}
+              />
+              <ExperimentDetailModal
+                experiment={inspectingExperiment}
+                onClose={() => setInspectingExperiment(null)}
               />
             </div>
           )}

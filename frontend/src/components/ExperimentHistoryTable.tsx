@@ -24,10 +24,10 @@ export const ExperimentHistoryTable: React.FC<ExperimentHistoryTableProps> = ({
         <div className="flex items-end justify-between gap-4 pb-6">
           <div>
             <h3 className="text-[32px] font-semibold tracking-[-0.035em] text-[#1d1d1f] sm:text-[40px]">
-              Archive
+              History
             </h3>
             <p className="mt-1 text-[14px] text-[#6e6e73]">
-              Past experiment runs, chaos scenarios, and benchmark vitals.
+              Past experiment runs, chaos scenarios, and benchmark vitals. Click any run to inspect.
             </p>
           </div>
           <button
@@ -42,7 +42,7 @@ export const ExperimentHistoryTable: React.FC<ExperimentHistoryTableProps> = ({
 
       {experiments.length === 0 ? (
         <div className="py-16 text-center">
-          <p className="text-[17px] font-medium text-[#1d1d1f]">No experiments archived yet</p>
+          <p className="text-[17px] font-medium text-[#1d1d1f]">No experiment history yet</p>
           <p className="mt-1 text-[14px] text-[#6e6e73]">
             Run a simulation from the Studio tab to record telemetry and failure analysis.
           </p>

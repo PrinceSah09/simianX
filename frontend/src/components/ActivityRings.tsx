@@ -38,6 +38,8 @@ export const ActivityRings: React.FC<ActivityRingsProps> = ({
           const isFull = ratio >= 1
           const offset = isFull ? 0 : circumference * (1 - ratio)
           const dashArray = isFull ? `${circumference + 1} ${circumference + 1}` : circumference
+          const isVisible = ratio > 0.005
+
           return (
             <g key={index}>
               <circle
@@ -48,19 +50,21 @@ export const ActivityRings: React.FC<ActivityRingsProps> = ({
                 stroke="#e8e8ed"
                 strokeWidth={stroke}
               />
-              <motion.circle
-                cx={cx}
-                cy={cy}
-                r={radius}
-                fill="none"
-                stroke={ring.color}
-                strokeWidth={stroke}
-                strokeLinecap="round"
-                strokeDasharray={dashArray}
-                initial={{ strokeDashoffset: circumference }}
-                animate={{ strokeDashoffset: offset }}
-                transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1], delay: index * 0.06 }}
-              />
+              {isVisible && (
+                <motion.circle
+                  cx={cx}
+                  cy={cy}
+                  r={radius}
+                  fill="none"
+                  stroke={ring.color}
+                  strokeWidth={stroke}
+                  strokeLinecap={ratio >= 0.04 ? "round" : "butt"}
+                  strokeDasharray={dashArray}
+                  initial={{ strokeDashoffset: circumference }}
+                  animate={{ strokeDashoffset: offset }}
+                  transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1], delay: index * 0.06 }}
+                />
+              )}
             </g>
           )
         })}
