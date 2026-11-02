@@ -139,6 +139,84 @@ sequenceDiagram
     Browser->>Browser: GPU smoothly transitions Activity Rings and P95 gauge with zero layout shift
 ```
 
+### The End-to-End Observability Pipeline (OTel, Prometheus & Logs)
+
+The following diagram maps out how incoming traffic (normal client traffic or chaos experiments) is ingested, traced with OpenTelemetry, collected into histogram buckets, and streamed to the frontend:
+
+```mermaid
+flowchart TD
+    subgraph Client["Traffic Sources"]
+        User["Browser / HTTP Client"]
+        Chaos["Chaos Workload Generator<br/>• Traffic Burst (10-50 RPS)<br/>• Cascading 5xx Faults<br/>• Gaussian Tail Latencies"]
+    end
+
+    subgraph FastAPI["SimianX Backend Core (:8000)"]
+        Middleware["record_telemetry_middleware<br/>• High-precision time.perf_counter()<br/>• Injects X-Trace-Id header<br/>• Filters admin/polling noise"]
+        
+        subgraph OTelSub["OpenTelemetry (OTel) SDK"]
+            FastAPIInst["FastAPIInstrumentor<br/>(Server Root Spans)"]
+            HTTPXInst["HTTPXClientInstrumentor<br/>(Client Child Spans)"]
+            Tracer["TracerProvider<br/>Resource: simianx-backend, k8s.pod"]
+            
+            subgraph DualExporters["Dual Span Processors"]
+                BatchProc["BatchSpanProcessor<br/>→ OTLPSpanExporter (Proto/HTTP)<br/>(External Grafana Alloy / Tempo)"]
+                SimpleProc["SimpleSpanProcessor<br/>→ BufferSpanExporter<br/>(In-Memory Ring Buffer: 200 traces)"]
+            end
+        end
+
+        subgraph MetricsSub["Metrics Engine"]
+            MemCollector["MetricsCollector (In-Memory)<br/>• 10s Rolling Sliding Window<br/>• P50 / P90 / P95 / P99 Quantiles<br/>• Error Rate & Availability"]
+            PromExporter["record_prometheus_request()<br/>• simianx_http_requests_total<br/>• simianx_http_request_duration_seconds"]
+        end
+
+        subgraph LogsSub["Live Logs Engine"]
+            LogBuffer["append_request_log()<br/>• Microsecond timestamps<br/>• Correlated tr-xxx Trace ID<br/>• Status & Chaos annotations"]
+        end
+    end
+
+    subgraph Cluster["Kubernetes Infrastructure"]
+        Prometheus["Prometheus Server (:9090)<br/>• role: pod dynamic discovery<br/>• Scrapes GET /metrics every 2s"]
+    end
+
+    subgraph UI["SimianX Frontend Cockpit (:3000)"]
+        Rings["Apple Activity Rings<br/>(RPS, Latency Headroom, Availability)"]
+        TracesUI["Trace Waterfall Viewer<br/>(Parent-Child Spans, Offsets, Timeline)"]
+        Console["Live Terminal Console<br/>(200 OK, 5xx Chaos Badges, Trace Chips)"]
+    end
+
+    User --> Middleware
+    Chaos --> Middleware
+    Middleware --> FastAPIInst
+    FastAPIInst --> Tracer
+    Tracer --> BatchProc
+    Tracer --> SimpleProc
+    Middleware --> MemCollector
+    Middleware --> PromExporter
+    Middleware --> LogBuffer
+
+    PromExporter -.->|Scraped by| Prometheus
+    Prometheus -.->|PromQL Queries| PromClient["PrometheusClient Service<br/>(Resilient Fallback)"]
+    PromClient --> Rings
+    SimpleProc --> TracesUI
+    LogBuffer --> Console
+
+    classDef client fill:#f8fafc,stroke:#94a3b8,stroke-width:1.5px,color:#0f172a;
+    classDef mw fill:#eff6ff,stroke:#3b82f6,stroke-width:1.5px,color:#1e40af;
+    classDef otel fill:#faf5ff,stroke:#a855f7,stroke-width:1.5px,color:#6b21a8;
+    classDef metrics fill:#f0fdf4,stroke:#22c55e,stroke-width:1.5px,color:#166534;
+    classDef logs fill:#fff7ed,stroke:#f97316,stroke-width:1.5px,color:#9a3412;
+    classDef prom fill:#fef3c7,stroke:#f59e0b,stroke-width:1.5px,color:#92400e;
+    classDef ui fill:#ffffff,stroke:#64748b,stroke-width:1.5px,color:#0f172a;
+
+    class Client,User,Chaos client;
+    class Middleware mw;
+    class OTelSub,FastAPIInst,HTTPXInst,Tracer,DualExporters,BatchProc,SimpleProc otel;
+    class MetricsSub,MemCollector,PromExporter metrics;
+    class LogsSub,LogBuffer logs;
+    class Cluster,Prometheus prom;
+    class UI,Rings,TracesUI,Console,PromClient ui;
+```
+
 ### The Live UI in Action:
 
 Here is the actual studio dashboard running locally on `http://localhost:30080/` (or `http://localhost:3000/` in Docker):

@@ -68,6 +68,98 @@ flowchart TD
 
 ---
 
+## Observability Deep-Dive: OpenTelemetry (OTel) & Prometheus Pipeline
+
+Below is the complete end-to-end data pipeline showing how traffic flows from clients and chaos injectors through OpenTelemetry tracing, in-memory sliding-window metrics, Prometheus dynamic Kubernetes scraping, and the React 19 Cockpit:
+
+```mermaid
+flowchart TD
+    subgraph Client["Traffic Sources"]
+        User["Browser / HTTP Client"]
+        Chaos["Chaos Workload Generator<br/>• Traffic Burst (10-50 RPS)<br/>• Cascading 5xx Faults<br/>• Gaussian Tail Latencies"]
+    end
+
+    subgraph FastAPI["SimianX Backend Core (:8000)"]
+        Middleware["record_telemetry_middleware<br/>• High-precision time.perf_counter()<br/>• Injects X-Trace-Id header<br/>• Filters admin/polling noise"]
+        
+        subgraph OTelSub["OpenTelemetry (OTel) SDK"]
+            FastAPIInst["FastAPIInstrumentor<br/>(Server Root Spans)"]
+            HTTPXInst["HTTPXClientInstrumentor<br/>(Client Child Spans)"]
+            Tracer["TracerProvider<br/>Resource: simianx-backend, k8s.pod"]
+            
+            subgraph DualExporters["Dual Span Processors"]
+                BatchProc["BatchSpanProcessor<br/>→ OTLPSpanExporter (Proto/HTTP)<br/>(External Grafana Alloy / Tempo)"]
+                SimpleProc["SimpleSpanProcessor<br/>→ BufferSpanExporter<br/>(In-Memory Ring Buffer: 200 traces)"]
+            end
+        end
+
+        subgraph MetricsSub["Metrics Engine"]
+            MemCollector["MetricsCollector (In-Memory)<br/>• 10s Rolling Sliding Window<br/>• P50 / P90 / P95 / P99 Quantiles<br/>• Error Rate & Availability"]
+            PromExporter["record_prometheus_request()<br/>• simianx_http_requests_total<br/>• simianx_http_request_duration_seconds"]
+        end
+
+        subgraph LogsSub["Live Logs Engine"]
+            LogBuffer["append_request_log()<br/>• Microsecond timestamps<br/>• Correlated tr-xxx Trace ID<br/>• Status & Chaos annotations"]
+        end
+    end
+
+    subgraph Cluster["Kubernetes Infrastructure"]
+        Prometheus["Prometheus Server (:9090)<br/>• role: pod dynamic discovery<br/>• Scrapes GET /metrics every 2s"]
+    end
+
+    subgraph UI["SimianX Frontend Cockpit (:3000)"]
+        Rings["Apple Activity Rings<br/>(RPS, Latency Headroom, Availability)"]
+        TracesUI["Trace Waterfall Viewer<br/>(Parent-Child Spans, Offsets, Timeline)"]
+        Console["Live Terminal Console<br/>(200 OK, 5xx Chaos Badges, Trace Chips)"]
+    end
+
+    User --> Middleware
+    Chaos --> Middleware
+    Middleware --> FastAPIInst
+    FastAPIInst --> Tracer
+    Tracer --> BatchProc
+    Tracer --> SimpleProc
+    Middleware --> MemCollector
+    Middleware --> PromExporter
+    Middleware --> LogBuffer
+
+    PromExporter -.->|Scraped by| Prometheus
+    Prometheus -.->|PromQL Queries| PromClient["PrometheusClient Service<br/>(Resilient Fallback)"]
+    PromClient --> Rings
+    SimpleProc --> TracesUI
+    LogBuffer --> Console
+
+    classDef client fill:#f8fafc,stroke:#94a3b8,stroke-width:1.5px,color:#0f172a;
+    classDef mw fill:#eff6ff,stroke:#3b82f6,stroke-width:1.5px,color:#1e40af;
+    classDef otel fill:#faf5ff,stroke:#a855f7,stroke-width:1.5px,color:#6b21a8;
+    classDef metrics fill:#f0fdf4,stroke:#22c55e,stroke-width:1.5px,color:#166534;
+    classDef logs fill:#fff7ed,stroke:#f97316,stroke-width:1.5px,color:#9a3412;
+    classDef prom fill:#fef3c7,stroke:#f59e0b,stroke-width:1.5px,color:#92400e;
+    classDef ui fill:#ffffff,stroke:#64748b,stroke-width:1.5px,color:#0f172a;
+
+    class Client,User,Chaos client;
+    class Middleware mw;
+    class OTelSub,FastAPIInst,HTTPXInst,Tracer,DualExporters,BatchProc,SimpleProc otel;
+    class MetricsSub,MemCollector,PromExporter metrics;
+    class LogsSub,LogBuffer logs;
+    class Cluster,Prometheus prom;
+    class UI,Rings,TracesUI,Console,PromClient ui;
+```
+
+### Core Architecture Highlights:
+
+1. **Dual Span Processors**:
+   - `BatchSpanProcessor` exports asynchronously via standard Protobuf/HTTP to external collectors (Grafana Alloy / Tempo / Jaeger).
+   - `SimpleSpanProcessor` immediately commits finished spans into a thread-safe ring buffer (`InMemoryTraceBuffer`), allowing the UI's Waterfall viewer to query complete traces with zero external dependencies.
+2. **Noise Isolation**:
+   - Internal dashboard polling and Prometheus `/metrics` scrapes are filtered out in middleware, preventing telemetry pollution.
+3. **Resilient PromQL Engine**:
+   - When Prometheus is live, the UI queries real PromQL histogram quantiles. If Prometheus is restarting, it automatically falls back to internal sliding-window memory with zero downtime.
+4. **W3C Distributed Trace Correlation**:
+   - Every HTTP response is stamped with `X-Trace-Id`. Log lines, trace spans, and cURL replays all share identical identifiers (`tr-xxxx`).
+
+---
+
 ## 1. Local Development Workflows
 
 ### Option A: Standalone Local Development (No Docker/K8s required)
