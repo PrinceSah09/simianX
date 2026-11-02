@@ -6,7 +6,7 @@ variable "environment" {
 variable "project_name" {
   description = "Name of the project"
   type        = string
-  default     = "scalekart"
+  default     = "simianx"
 }
 
 variable "backend_alb_dns_name" {

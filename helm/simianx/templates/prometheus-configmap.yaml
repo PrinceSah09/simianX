@@ -6,7 +6,7 @@ metadata:
   namespace: {{ .Values.global.namespace }}
   labels:
     app.kubernetes.io/name: prometheus
-    {{- include "scalekart.labels" . | nindent 4 }}
+    {{- include "simianx.labels" . | nindent 4 }}
 data:
   prometheus.yml: |
     global:
@@ -15,7 +15,7 @@ data:
       scrape_timeout: {{ .Values.prometheus.scrapeInterval | default "2s" }}
 
     scrape_configs:
-      - job_name: 'scalekart-pods'
+      - job_name: 'simianx-pods'
         kubernetes_sd_configs:
           - role: pod
             namespaces:

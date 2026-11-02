@@ -200,7 +200,7 @@ Every single file in this repository has a clear architectural responsibility. L
           hostPort: 30090 # Prometheus Server
   ```
 
-#### 2. [`helm/scalekart/templates/backend-deployment.yaml`](file:///Users/princekumar/Desktop/Scalekart/helm/scalekart/templates/backend-deployment.yaml)
+#### 2. [`helm/simianx/templates/backend-deployment.yaml`](file:///Users/princekumar/Desktop/Scalekart/helm/simianx/templates/backend-deployment.yaml)
 
 - **What it does**: Deploys the Python microservice fleet parameterized via Helm.
 - **Production Best Practices Built In**:
@@ -216,11 +216,11 @@ Every single file in this repository has a clear architectural responsibility. L
     ```
     Prometheus reads these labels to discover where to pull metrics.
 
-#### 3. [`helm/scalekart/templates/backend-service.yaml`](file:///Users/princekumar/Desktop/Scalekart/helm/scalekart/templates/backend-service.yaml)
+#### 3. [`helm/simianx/templates/backend-service.yaml`](file:///Users/princekumar/Desktop/Scalekart/helm/simianx/templates/backend-service.yaml)
 
 - **What it does**: Creates a stable virtual IP (`simianx-backend.simianx.svc.cluster.local:8000`) that forwards incoming traffic across all healthy backend pods using round-robin / probabilistic load balancing.
 
-#### 4. [`helm/scalekart/templates/prometheus-configmap.yaml`](file:///Users/princekumar/Desktop/Scalekart/helm/scalekart/templates/prometheus-configmap.yaml)
+#### 4. [`helm/simianx/templates/prometheus-configmap.yaml`](file:///Users/princekumar/Desktop/Scalekart/helm/simianx/templates/prometheus-configmap.yaml)
 
 - **What it does**: The Prometheus configuration file mounted as a Kubernetes `ConfigMap`.
 - **Pod Role Discovery (`kubernetes_sd_configs`)**:

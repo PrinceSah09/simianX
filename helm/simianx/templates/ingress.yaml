@@ -2,10 +2,10 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: scalekart-ingress
+  name: simianx-ingress
   namespace: {{ .Values.global.namespace }}
   labels:
-    {{- include "scalekart.labels" . | nindent 4 }}
+    {{- include "simianx.labels" . | nindent 4 }}
   {{- with .Values.ingress.annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
@@ -36,7 +36,7 @@ spec:
             pathType: {{ .pathType }}
             backend:
               service:
-                name: scalekart-backend
+                name: simianx-backend
                 port:
                   number: 8000
           {{- end }}

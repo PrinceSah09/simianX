@@ -77,7 +77,7 @@ export const LogDetailModal: React.FC<LogDetailModalProps> = ({
       traceId: log.traceId,
       annotation: log.message || null,
       protocol: "HTTP/1.1",
-      service: "scalekart-backend",
+      service: "simianx-backend",
       telemetry: {
         collector: "Grafana Alloy (OTel)",
         tracing_exporter: "Grafana Tempo",

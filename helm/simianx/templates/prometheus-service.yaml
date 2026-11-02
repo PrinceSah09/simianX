@@ -6,7 +6,7 @@ metadata:
   namespace: {{ .Values.global.namespace }}
   labels:
     app.kubernetes.io/name: prometheus
-    {{- include "scalekart.labels" . | nindent 4 }}
+    {{- include "simianx.labels" . | nindent 4 }}
 spec:
   type: {{ .Values.prometheus.service.type }}
   selector:

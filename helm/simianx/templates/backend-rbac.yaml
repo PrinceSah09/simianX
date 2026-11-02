@@ -1,20 +1,20 @@
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: scalekart-backend
+  name: simianx-backend
   namespace: {{ .Values.global.namespace }}
   labels:
-    app.kubernetes.io/name: scalekart-backend
-    {{- include "scalekart.labels" . | nindent 4 }}
+    app.kubernetes.io/name: simianx-backend
+    {{- include "simianx.labels" . | nindent 4 }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: scalekart-backend-viewer
+  name: simianx-backend-viewer
   namespace: {{ .Values.global.namespace }}
   labels:
-    app.kubernetes.io/name: scalekart-backend
-    {{- include "scalekart.labels" . | nindent 4 }}
+    app.kubernetes.io/name: simianx-backend
+    {{- include "simianx.labels" . | nindent 4 }}
 rules:
   - apiGroups: [""]
     resources: ["pods"]
@@ -26,16 +26,16 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: scalekart-backend-viewer-binding
+  name: simianx-backend-viewer-binding
   namespace: {{ .Values.global.namespace }}
   labels:
-    app.kubernetes.io/name: scalekart-backend
-    {{- include "scalekart.labels" . | nindent 4 }}
+    app.kubernetes.io/name: simianx-backend
+    {{- include "simianx.labels" . | nindent 4 }}
 subjects:
   - kind: ServiceAccount
-    name: scalekart-backend
+    name: simianx-backend
     namespace: {{ .Values.global.namespace }}
 roleRef:
   kind: Role
-  name: scalekart-backend-viewer
+  name: simianx-backend-viewer
   apiGroup: rbac.authorization.k8s.io

@@ -7,7 +7,7 @@ metadata:
   labels:
     app.kubernetes.io/name: prometheus
     app: prometheus
-    {{- include "scalekart.labels" . | nindent 4 }}
+    {{- include "simianx.labels" . | nindent 4 }}
 spec:
   replicas: 1
   selector:

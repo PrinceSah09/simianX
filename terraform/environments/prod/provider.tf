@@ -18,7 +18,7 @@ provider "aws" {
 
   default_tags {
     tags = {
-      Project     = "ScaleKart"
+      Project     = "SimianX"
       ManagedBy   = "Terraform"
       Environment = "prod"
     }

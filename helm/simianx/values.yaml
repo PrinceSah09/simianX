@@ -75,7 +75,7 @@ ingress:
     # alb.ingress.kubernetes.io/scheme: internet-facing
     # alb.ingress.kubernetes.io/target-type: ip
   hosts:
-    - host: scalekart.internal
+    - host: simianx.internal
       paths:
         - path: /
           pathType: Prefix

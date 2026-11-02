@@ -20,10 +20,10 @@ test: ## Run backend tests, linter, and frontend build check
 
 helm-lint: ## Validate and lint Helm chart across local, dev, and prod profiles
 	@echo "==> Linting Helm chart..."
-	helm lint ./helm/scalekart
-	helm template local ./helm/scalekart > /dev/null
-	helm template dev ./helm/scalekart -f ./helm/scalekart/values-dev.yaml > /dev/null
-	helm template prod ./helm/scalekart -f ./helm/scalekart/values-prod.yaml > /dev/null
+	helm lint ./helm/simianx
+	helm template local ./helm/simianx > /dev/null
+	helm template dev ./helm/simianx -f ./helm/simianx/values-dev.yaml > /dev/null
+	helm template prod ./helm/simianx -f ./helm/simianx/values-prod.yaml > /dev/null
 	@echo "✅ Helm chart validation successful across all environments!"
 
 tf-validate: ## Validate Terraform AWS infrastructure code
@@ -70,7 +70,7 @@ kind-up: kind-create docker-build ## Deploy SimianX Backend & Prometheus to loca
 	@echo "==> Loading backend image into Kind cluster..."
 	kind load docker-image simianx-backend:latest --name simianx
 	@echo "==> Deploying backend services via Helm..."
-	helm upgrade --install simianx ./helm/scalekart -n simianx --create-namespace
+	helm upgrade --install simianx ./helm/simianx -n simianx --create-namespace
 
 kind-down: ## Uninstall Helm release from local Kind cluster
 	@echo "==> Tearing down SimianX release..."

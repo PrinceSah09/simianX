@@ -1,7 +1,7 @@
 variable "project_name" {
   description = "The project name prefix"
   type        = string
-  default     = "scalekart"
+  default     = "simianx"
 }
 
 variable "environment" {

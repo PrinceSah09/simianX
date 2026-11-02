@@ -1,4 +1,4 @@
-name: ScaleKart Infrastructure (Terraform)
+name: SimianX Infrastructure (Terraform)
 
 on:
   pull_request:

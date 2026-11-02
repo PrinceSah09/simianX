@@ -1,5 +1,5 @@
 variable "aws_region" {
-  description = "AWS region for ScaleKart infrastructure"
+  description = "AWS region for SimianX infrastructure"
   type        = string
   default     = "ap-south-1"
 }
@@ -23,7 +23,7 @@ variable "cluster_version" {
 }
 
 variable "vpc_cidr" {
-  description = "CIDR block for ScaleKart VPC"
+  description = "CIDR block for SimianX VPC"
   type        = string
   default     = "10.20.0.0/16"
 }

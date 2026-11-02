@@ -352,7 +352,7 @@ Use these AWS CLI commands to verify and inspect your VPC setup:
 ### 1. View SimianX VPC ID and CIDR
 ```bash
 aws ec2 describe-vpcs \
-  --filters "Name=tag:Project,Values=SimianX,ScaleKart" \
+  --filters "Name=tag:Project,Values=SimianX" \
   --query "Vpcs[].{VpcId:VpcId,CidrBlock:CidrBlock,State:State,Tags:Tags[?Key=='Name'].Value|[0]}" \
   --output table
 ```
@@ -360,7 +360,7 @@ aws ec2 describe-vpcs \
 ### 2. Inspect Subnets and Available IP Counts
 ```bash
 aws ec2 describe-subnets \
-  --filters "Name=tag:Project,Values=SimianX,ScaleKart" \
+  --filters "Name=tag:Project,Values=SimianX" \
   --query "Subnets[].{SubnetId:SubnetId,AZ:AvailabilityZone,CIDR:CidrBlock,AvailableIPs:AvailableIpAddressCount,Name:Tags[?Key=='Name'].Value|[0]}" \
   --output table
 ```
@@ -368,7 +368,7 @@ aws ec2 describe-subnets \
 ### 3. Check Route Tables & Default Gateway Routes
 ```bash
 aws ec2 describe-route-tables \
-  --filters "Name=tag:Project,Values=SimianX,ScaleKart" \
+  --filters "Name=tag:Project,Values=SimianX" \
   --query "RouteTables[].{RouteTableId:RouteTableId,Name:Tags[?Key=='Name'].Value|[0],Destinations:Routes[].DestinationCidrBlock,Targets:Routes[].GatewayId}" \
   --output table
 ```
@@ -376,7 +376,7 @@ aws ec2 describe-route-tables \
 ### 4. Check NAT Gateway Status & Elastic IP
 ```bash
 aws ec2 describe-nat-gateways \
-  --filter "Name=tag:Project,Values=SimianX,ScaleKart" \
+  --filter "Name=tag:Project,Values=SimianX" \
   --query "NatGateways[].{NatGatewayId:NatGatewayId,State:State,SubnetId:SubnetId,PublicIP:NatGatewayAddresses[0].PublicIp}" \
   --output table
 ```
@@ -384,7 +384,7 @@ aws ec2 describe-nat-gateways \
 ### 5. Verify EKS Subnet Tagging
 ```bash
 aws ec2 describe-subnets \
-  --filters "Name=tag:Project,Values=SimianX,ScaleKart" \
+  --filters "Name=tag:Project,Values=SimianX" \
   --query "Subnets[].{Subnet:Tags[?Key=='Name'].Value|[0],ELB_Tag:Tags[?Key=='kubernetes.io/role/elb'].Value|[0],Internal_ELB_Tag:Tags[?Key=='kubernetes.io/role/internal-elb'].Value|[0]}" \
   --output table
 ```

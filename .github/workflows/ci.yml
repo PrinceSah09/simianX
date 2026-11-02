@@ -1,4 +1,4 @@
-name: ScaleKart CI
+name: SimianX CI
 
 on:
   push:
@@ -73,7 +73,7 @@ jobs:
 
       - name: Lint Helm Chart
         run: |
-          helm lint ./helm/scalekart
-          helm template local ./helm/scalekart > /dev/null
-          helm template dev ./helm/scalekart -f ./helm/scalekart/values-dev.yaml > /dev/null
-          helm template prod ./helm/scalekart -f ./helm/scalekart/values-prod.yaml > /dev/null
+          helm lint ./helm/simianx
+          helm template local ./helm/simianx > /dev/null
+          helm template dev ./helm/simianx -f ./helm/simianx/values-dev.yaml > /dev/null
+          helm template prod ./helm/simianx -f ./helm/simianx/values-prod.yaml > /dev/null

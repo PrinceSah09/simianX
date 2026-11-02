@@ -12,7 +12,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/PrinceSah09/Scalekart.git
+    repoURL: https://github.com/PrinceSah09/simianX.git
     targetRevision: HEAD
     path: argocd/apps/prod
   destination:

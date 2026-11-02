@@ -1,5 +1,5 @@
 apiVersion: v2
-name: scalekart
+name: simianx
 description: Production Helm chart for SimianX SRE Chaos & Telemetry Control Plane on Kubernetes / AWS EKS
 type: application
 version: 1.0.0

@@ -73,7 +73,7 @@ flowchart TD
     end
 
     subgraph GitOpsPipeline["Pipeline 5: GitOps In-Cluster (ArgoCD)"]
-        PushECR --> AutoCommit["Auto-Commit New Image Tag<br/>to <code>helm/scalekart/values-dev.yaml</code>"]
+        PushECR --> AutoCommit["Auto-Commit New Image Tag<br/>to <code>helm/simianx/values-dev.yaml</code>"]
         AutoCommit --> ArgoReconcile["ArgoCD In-Cluster Controller<br/>• Detects Commit SHA<br/>• Zero-Downtime Rolling Update<br/>• Self-Healing & Drift Rectification"]
     end
 
@@ -128,10 +128,10 @@ Many junior engineers build a single giant script that does everything: formats 
    ```
 3. **Helm Quality Gate:**
    ```bash
-   helm lint ./helm/scalekart      # Validates YAML syntax & template semantics
-   helm template local ./helm/scalekart > /dev/null
-   helm template dev ./helm/scalekart -f ./helm/scalekart/values-dev.yaml > /dev/null
-   helm template prod ./helm/scalekart -f ./helm/scalekart/values-prod.yaml > /dev/null
+   helm lint ./helm/simianx      # Validates YAML syntax & template semantics
+   helm template local ./helm/simianx > /dev/null
+   helm template dev ./helm/simianx -f ./helm/simianx/values-dev.yaml > /dev/null
+   helm template prod ./helm/simianx -f ./helm/simianx/values-prod.yaml > /dev/null
    ```
 
 ---

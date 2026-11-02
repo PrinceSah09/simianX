@@ -121,7 +121,7 @@ kind load docker-image prom/prometheus:v2.54.1 --name simianx
 ### Step 3: Deploy via Helm (or `make kind-up`)
 ```bash
 # Deploy all microservices, RBAC, and Prometheus via Helm
-helm upgrade --install simianx ./helm/scalekart -n simianx --create-namespace
+helm upgrade --install simianx ./helm/simianx -n simianx --create-namespace
 ```
 
 ### Step 4: Verify Deployment Status

@@ -44,7 +44,7 @@ export const InfrastructurePanel: React.FC<InfrastructurePanelProps> = ({ data, 
     }
   }
 
-  const cliCommand = `kubectl scale deployment ${data?.deployment_name || "scalekart-backend"} --replicas=${targetReplicas} -n ${data?.namespace || "simianx"}`
+  const cliCommand = `kubectl scale deployment ${data?.deployment_name || "simianx-backend"} --replicas=${targetReplicas} -n ${data?.namespace || "simianx"}`
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(cliCommand)

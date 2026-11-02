@@ -15,7 +15,7 @@ output "cluster_certificate_authority_data" {
 }
 
 output "ecr_backend_url" {
-  description = "AWS ECR repository URL for ScaleKart Backend (Dev)"
+  description = "AWS ECR repository URL for SimianX Backend (Dev)"
   value       = module.ecr.backend_repository_url
 }
 
@@ -35,7 +35,7 @@ output "frontend_cloudfront_distribution_id" {
 }
 
 output "frontend_cloudfront_url" {
-  description = "Public HTTPS URL for ScaleKart frontend via CloudFront Global CDN"
+  description = "Public HTTPS URL for SimianX frontend via CloudFront Global CDN"
   value       = module.frontend_cdn.frontend_url
 }
 

@@ -6,7 +6,7 @@ metadata:
   namespace: {{ .Values.global.namespace }}
   labels:
     app.kubernetes.io/name: prometheus
-    {{- include "scalekart.labels" . | nindent 4 }}
+    {{- include "simianx.labels" . | nindent 4 }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -14,7 +14,7 @@ metadata:
   name: {{ .Release.Name }}-prometheus
   labels:
     app.kubernetes.io/name: prometheus
-    {{- include "scalekart.labels" . | nindent 4 }}
+    {{- include "simianx.labels" . | nindent 4 }}
 rules:
   - apiGroups: [""]
     resources:
@@ -33,7 +33,7 @@ metadata:
   name: {{ .Release.Name }}-prometheus
   labels:
     app.kubernetes.io/name: prometheus
-    {{- include "scalekart.labels" . | nindent 4 }}
+    {{- include "simianx.labels" . | nindent 4 }}
 subjects:
   - kind: ServiceAccount
     name: prometheus

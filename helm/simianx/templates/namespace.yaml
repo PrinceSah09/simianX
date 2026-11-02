@@ -3,4 +3,4 @@ kind: Namespace
 metadata:
   name: {{ .Values.global.namespace }}
   labels:
-    {{- include "scalekart.labels" . | nindent 4 }}
+    {{- include "simianx.labels" . | nindent 4 }}

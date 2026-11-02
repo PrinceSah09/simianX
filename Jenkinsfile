@@ -93,7 +93,7 @@ pipeline {
             steps {
                 sh """
                     echo "=== Building Backend Docker Image for Environment: ${params.DEPLOY_ENV} ==="
-                    BACKEND_REPO="scalekart-backend-${params.DEPLOY_ENV}"
+                    BACKEND_REPO="simianx-backend-${params.DEPLOY_ENV}"
 
                     # Backend container
                     docker build \\
@@ -108,7 +108,7 @@ pipeline {
             steps {
                 sh """
                     echo "=== Pushing Backend Image to AWS ECR for: ${params.DEPLOY_ENV} ==="
-                    BACKEND_REPO="scalekart-backend-${params.DEPLOY_ENV}"
+                    BACKEND_REPO="simianx-backend-${params.DEPLOY_ENV}"
 
                     docker push \${ECR_REGISTRY}/\${BACKEND_REPO}:\${IMAGE_TAG}
                     docker push \${ECR_REGISTRY}/\${BACKEND_REPO}:latest
@@ -145,7 +145,7 @@ pipeline {
             steps {
                 sh """
                     echo "=== Updating Helm values for GitOps Reconciliation (${params.DEPLOY_ENV}) ==="
-                    HELM_VALUES_PATH="helm/scalekart/values-${params.DEPLOY_ENV}.yaml"
+                    HELM_VALUES_PATH="helm/simianx/values-${params.DEPLOY_ENV}.yaml"
 
                     # Update tag in environment-specific values file
                     sed -i.bak "s|tag:.*# Automatically updated by Jenkins|tag: \\"${IMAGE_TAG}\\" # Automatically updated by Jenkins|g" \${HELM_VALUES_PATH}

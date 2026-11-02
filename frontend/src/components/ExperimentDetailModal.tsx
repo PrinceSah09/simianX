@@ -203,7 +203,7 @@ export const ExperimentDetailModal: React.FC<ExperimentDetailModalProps> = ({
                   Target Endpoint
                 </p>
                 <p className="mt-1 font-mono text-[13px] text-[#1d1d1f] truncate">
-                  {experiment.target_endpoint || "http://scalekart-backend:8000/api/v1/workload"}
+                  {experiment.target_endpoint || "http://simianx-backend:8000/api/v1/workload"}
                 </p>
               </div>
 

@@ -2,22 +2,22 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: scalekart-frontend
+  name: simianx-frontend
   namespace: {{ .Values.global.namespace }}
   labels:
-    app.kubernetes.io/name: scalekart-frontend
-    app: scalekart-frontend
-    {{- include "scalekart.labels" . | nindent 4 }}
+    app.kubernetes.io/name: simianx-frontend
+    app: simianx-frontend
+    {{- include "simianx.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.frontend.replicaCount }}
   selector:
     matchLabels:
-      app: scalekart-frontend
+      app: simianx-frontend
   template:
     metadata:
       labels:
-        app: scalekart-frontend
-        app.kubernetes.io/name: scalekart-frontend
+        app: simianx-frontend
+        app.kubernetes.io/name: simianx-frontend
     spec:
       containers:
         - name: frontend
@@ -29,4 +29,3 @@ spec:
           resources:
             {{- toYaml .Values.frontend.resources | nindent 12 }}
 {{- end }}
-

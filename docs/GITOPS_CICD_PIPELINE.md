@@ -13,7 +13,7 @@
    - [The Traditional Push Model (And Why It Sucks)](#the-traditional-push-model)
    - [The GitOps Pull Model (The Enterprise Standard)](#the-gitops-pull-model)
 4. [Chapter 3: The Complete SimianX End-to-End Delivery Flow](#4-chapter-3-the-complete-simianx-end-to-end-delivery-flow)
-5. [Chapter 4: Deep-Dive into Helm Architecture (`helm/scalekart/`)](#5-chapter-4-deep-dive-into-helm-architecture)
+5. [Chapter 4: Deep-Dive into Helm Architecture (`helm/simianx/`)](#5-chapter-4-deep-dive-into-helm-architecture)
    - [Directory Layout & Chart Anatomy](#directory-layout--chart-anatomy)
    - [The Value Profile Strategy (Local vs. Dev vs. Prod)](#the-value-profile-strategy)
    - [DRY Templates & `_helpers.tpl`](#dry-templates--_helperstpl)
@@ -61,7 +61,7 @@ If you're new to cloud-native delivery, let's break down the three tools using p
 * **The Helm Solution**: Helm is the **package manager for Kubernetes** (think `npm` or `pip`, but for YAML).
 * **How it works**:
   * You write **Templates** once using Go templating syntax: `replicas: {{ .Values.backend.replicaCount }}`.
-  * You supply separate **Values files**: [`values-dev.yaml`](file:///Users/princekumar/Desktop/Scalekart/helm/scalekart/values-dev.yaml) and [`values-prod.yaml`](file:///Users/princekumar/Desktop/Scalekart/helm/scalekart/values-prod.yaml).
+  * You supply separate **Values files**: [`values-dev.yaml`](file:///Users/princekumar/Desktop/Scalekart/helm/simianx/values-dev.yaml) and [`values-prod.yaml`](file:///Users/princekumar/Desktop/Scalekart/helm/simianx/values-prod.yaml).
   * Helm merges the values into the template to dynamically stamp out the exact Kubernetes manifests needed.
 
 ---
@@ -145,7 +145,7 @@ flowchart TD
         Trivy --> BuildDocker["Build Immutable Docker Image<br/><code>simianx-backend-dev:tag</code>"]
         BuildDocker --> PushECR["Push to AWS ECR Registry"]
         PushECR --> SyncCDN["Deploy Frontend to S3 +<br/>CloudFront Cache Invalidation"]
-        SyncCDN --> GitCommit["GitOps Auto-Commit:<br/>Update tag in <code>helm/scalekart/values-dev.yaml</code><br/><code>[skip ci]</code> commit pushed to Git"]
+        SyncCDN --> GitCommit["GitOps Auto-Commit:<br/>Update tag in <code>helm/simianx/values-dev.yaml</code><br/><code>[skip ci]</code> commit pushed to Git"]
     end
 
     subgraph Step3["3. In-Cluster GitOps Reconciliation (ArgoCD)"]
@@ -175,10 +175,10 @@ flowchart TD
 
 ## 5. Chapter 4: Deep-Dive into Helm Architecture
 
-Our Helm chart is located at [`helm/scalekart/`](file:///Users/princekumar/Desktop/Scalekart/helm/scalekart/). It is designed following production best practices:
+Our Helm chart is located at [`helm/simianx/`](file:///Users/princekumar/Desktop/Scalekart/helm/simianx/). It is designed following production best practices:
 
 ```
-helm/scalekart/
+helm/simianx/
 ├── Chart.yaml              # Chart metadata (name, version, apiVersion v2)
 ├── values.yaml             # Base values (used for local Kind development)
 ├── values-dev.yaml         # Dev overrides (simianx-dev namespace, 1 replica, lower resources)
@@ -221,17 +221,17 @@ flowchart TD
 ```
 
 ### DRY Templates & `_helpers.tpl`
-In [`helm/scalekart/templates/_helpers.tpl`](file:///Users/princekumar/Desktop/Scalekart/helm/scalekart/templates/_helpers.tpl), we declare reusable labels:
+In [`helm/simianx/templates/_helpers.tpl`](file:///Users/princekumar/Desktop/Scalekart/helm/simianx/templates/_helpers.tpl), we declare reusable labels:
 ```yaml
-{{- define "scalekart.labels" -}}
-helm.sh/chart: {{ include "scalekart.chart" . }}
-{{ include "scalekart.selectorLabels" . }}
+{{- define "simianx.labels" -}}
+helm.sh/chart: {{ include "simianx.chart" . }}
+{{ include "simianx.selectorLabels" . }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
 environment: {{ .Values.global.namespace }}
 {{- end }}
 ```
-Every manifest includes `{{- include "scalekart.labels" . | nindent 4 }}`, ensuring consistent corporate tagging across every deployment, service, and ingress in the cluster.
+Every manifest includes `{{- include "simianx.labels" . | nindent 4 }}`, ensuring consistent corporate tagging across every deployment, service, and ingress in the cluster.
 
 ---
 
@@ -252,7 +252,7 @@ This is the magic bridge where CI hands off to CD:
 stage('GitOps Promotion (Helm & ArgoCD)') {
     steps {
         sh """
-            HELM_VALUES_PATH="helm/scalekart/values-${params.DEPLOY_ENV}.yaml"
+            HELM_VALUES_PATH="helm/simianx/values-${params.DEPLOY_ENV}.yaml"
 
             # 1. Update tag in environment-specific values file
             sed -i.bak "s|tag:.*# Automatically updated by Jenkins|tag: \\"${IMAGE_TAG}\\" # Automatically updated by Jenkins|g" \${HELM_VALUES_PATH}
@@ -284,9 +284,9 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/PrinceSah09/Scalekart.git
+    repoURL: https://github.com/PrinceSah09/simianX.git
     targetRevision: HEAD
-    path: helm/scalekart
+    path: helm/simianx
     helm:
       valueFiles:
         - values.yaml
@@ -348,7 +348,7 @@ spec:
 > **Answer:** *"Dependencies are external sub-charts packaged into your application (for example, packaging a Redis or PostgreSQL chart inside SimianX). They are declared in `Chart.yaml` under `dependencies:` with repository URLs and version constraints, and managed using `helm dependency update`."*
 
 ### Q10: How do you test a Helm chart locally before pushing to Git?
-> **Answer:** *"Three steps: (1) `helm lint ./helm/scalekart` to check for syntax and formatting errors. (2) `helm template local ./helm/scalekart -f values-dev.yaml` to render and inspect the raw YAML manifests locally without a cluster. (3) `helm install --dry-run --debug` to simulate cluster admission controller validation."*
+> **Answer:** *"Three steps: (1) `helm lint ./helm/simianx` to check for syntax and formatting errors. (2) `helm template local ./helm/simianx -f values-dev.yaml` to render and inspect the raw YAML manifests locally without a cluster. (3) `helm install --dry-run --debug` to simulate cluster admission controller validation."*
 
 ### Q11: What is the purpose of ArgoCD Sync Waves and Hooks?
 > **Answer:** *"Sync Waves allow you to order the deployment of resources using annotations like `argocd.argoproj.io/sync-wave: "1"`. For example, you can ensure Namespaces and CRDs are created in wave 0, Database migrations run in wave 1, and Backend pods deploy in wave 2. Sync hooks allow running ephemeral Kubernetes jobs before (`PreSync`) or after (`PostSync`) the main deployment."*
@@ -374,13 +374,13 @@ spec:
 ### 1. Inspect Helm Chart Render Locally
 ```bash
 # Lint chart syntax
-helm lint ./helm/scalekart
+helm lint ./helm/simianx
 
 # View rendered Dev manifests
-helm template dev ./helm/scalekart -f ./helm/scalekart/values-dev.yaml
+helm template dev ./helm/simianx -f ./helm/simianx/values-dev.yaml
 
 # View rendered Prod manifests
-helm template prod ./helm/scalekart -f ./helm/scalekart/values-prod.yaml
+helm template prod ./helm/simianx -f ./helm/simianx/values-prod.yaml
 ```
 
 ### 2. Verify ArgoCD Applications via CLI

@@ -1,27 +1,27 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: scalekart-dev
+  name: simianx-dev
   namespace: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
   labels:
-    app.kubernetes.io/name: scalekart
-    app.kubernetes.io/part-of: scalekart-gitops
+    app.kubernetes.io/name: simianx
+    app.kubernetes.io/part-of: simianx-gitops
     environment: dev
 spec:
   project: default
   source:
-    repoURL: https://github.com/PrinceSah09/Scalekart.git
+    repoURL: https://github.com/PrinceSah09/simianX.git
     targetRevision: HEAD
-    path: helm/scalekart
+    path: helm/simianx
     helm:
       valueFiles:
         - values.yaml
         - values-dev.yaml
   destination:
     server: https://kubernetes.default.svc
-    namespace: scalekart-dev
+    namespace: simianx-dev
   syncPolicy:
     automated:
       prune: true
