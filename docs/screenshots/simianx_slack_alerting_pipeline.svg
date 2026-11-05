@@ -1,0 +1,163 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 520" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgSlack" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0a0c12"/>
+      <stop offset="100%" stop-color="#111420"/>
+    </linearGradient>
+    <linearGradient id="sCard" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#181c28"/>
+      <stop offset="100%" stop-color="#121520"/>
+    </linearGradient>
+    <marker id="s-red" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#f43f5e"/>
+    </marker>
+    <marker id="s-amber" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#f59e0b"/>
+    </marker>
+    <marker id="s-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#10b981"/>
+    </marker>
+    <marker id="s-blue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#38bdf8"/>
+    </marker>
+  </defs>
+
+  <style>
+    .s-title { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif; font-size: 21px; font-weight: 700; fill: #f8fafc; }
+    .s-sub { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif; font-size: 12px; fill: #64748b; }
+    .s-header { font-family: -apple-system, BlinkMacSystemFont, sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; }
+    .s-node-title { font-family: -apple-system, BlinkMacSystemFont, sans-serif; font-size: 13px; font-weight: 600; fill: #f1f5f9; }
+    .s-code { font-family: "SF Mono", monospace; font-size: 10.5px; fill: #cbd5e1; }
+    .s-tag { font-family: -apple-system, BlinkMacSystemFont, sans-serif; font-size: 9.5px; font-weight: 700; text-transform: uppercase; }
+  </style>
+
+  <rect width="1200" height="520" rx="16" fill="url(#bgSlack)"/>
+  <rect x="1" y="1" width="1198" height="518" rx="15" fill="none" stroke="#1f2433" stroke-width="1.5"/>
+
+  <!-- Top Title -->
+  <g transform="translate(40, 36)">
+    <text x="0" y="17" class="s-title">SimianX · Production SRE Slack Incident Alerting Engine</text>
+    <text x="0" y="36" class="s-sub">Continuous Golden Signal Evaluation · Debounce Cooldown (60s) · Anti-Flapping Auto-Recovery · Rich Block Kit Cards</text>
+  </g>
+
+  <!-- Step 1: FastAPI Evaluation Loop (Left, x=40) -->
+  <g transform="translate(40, 85)">
+    <rect width="240" height="395" rx="12" fill="#0f121a" stroke="#222838" stroke-width="1.2"/>
+    <rect x="0" y="0" width="240" height="34" rx="12" fill="#141824"/>
+    <text x="14" y="22" class="s-header" fill="#38bdf8">1. Telemetry Loop</text>
+    
+    <g transform="translate(14, 52)">
+      <rect width="212" height="150" rx="8" fill="url(#sCard)" stroke="#262d3e" stroke-width="1"/>
+      <rect x="0" y="0" width="3" height="150" rx="1.5" fill="#0071e3"/>
+      <text x="12" y="22" class="s-node-title">FastAPI Lifespan</text>
+      <text x="12" y="44" class="s-code">• Every 3.0s Evaluation</text>
+      <text x="12" y="62" class="s-code">• Thread-Safe RLock</text>
+      <text x="12" y="80" class="s-code">• Queries MetricsCollector</text>
+      <text x="12" y="98" class="s-code">• Window RPS &amp; Error Rate</text>
+      <text x="12" y="116" class="s-code">• P95 &amp; P99 Quantiles</text>
+      <text x="12" y="134" class="s-code">• Active Chaos Status</text>
+    </g>
+
+    <g transform="translate(14, 220)">
+      <rect width="212" height="150" rx="8" fill="url(#sCard)" stroke="#262d3e" stroke-width="1"/>
+      <rect x="0" y="0" width="3" height="150" rx="1.5" fill="#8b5cf6"/>
+      <text x="12" y="22" class="s-node-title">Guard Engine</text>
+      <text x="12" y="44" class="s-code">• 60s Debounce Cooldown</text>
+      <text x="12" y="62" class="s-code">• Anti-Alert Fatigue</text>
+      <text x="12" y="80" class="s-code">• Hysteresis State Gate</text>
+      <text x="12" y="98" class="s-code">• 2 Consecutive Cycles</text>
+      <text x="12" y="116" class="s-code">  to Auto-Resolve</text>
+      <text x="12" y="134" class="s-code">• Masked Webhook URL</text>
+    </g>
+  </g>
+
+  <!-- Connectors Step 1 -> Step 2 -->
+  <path d="M 280 280 L 320 280" stroke="#38bdf8" stroke-width="1.8" marker-end="url(#s-blue)"/>
+
+  <!-- Step 2: Incident Threshold Classifiers (Middle, x=320) -->
+  <g transform="translate(320, 85)">
+    <rect width="360" height="395" rx="12" fill="#0f121a" stroke="#222838" stroke-width="1.2"/>
+    <rect x="0" y="0" width="360" height="34" rx="12" fill="#141824"/>
+    <text x="14" y="22" class="s-header" fill="#a855f7">2. Incident Classification Gate</text>
+
+    <!-- Critical Breach Card -->
+    <g transform="translate(14, 50)">
+      <rect width="332" height="96" rx="8" fill="#1f1115" stroke="#5c1d27" stroke-width="1.2"/>
+      <rect x="0" y="0" width="4" height="96" rx="2" fill="#f43f5e"/>
+      <text x="14" y="24" class="s-node-title" fill="#fca5a5">CRITICAL: Error Rate &gt; 5.0%</text>
+      <text x="14" y="46" class="s-code">• Severe customer-facing degradation</text>
+      <text x="14" y="64" class="s-code">• Dispatches incident card with red banner</text>
+      <text x="14" y="82" class="s-code">• Includes active error rate &amp; failing endpoints</text>
+      <text x="248" y="24" class="s-tag" fill="#f43f5e">CRITICAL</text>
+    </g>
+
+    <!-- Warning Breach Card -->
+    <g transform="translate(14, 160)">
+      <rect width="332" height="96" rx="8" fill="#1f1811" stroke="#5c3b17" stroke-width="1.2"/>
+      <rect x="0" y="0" width="4" height="96" rx="2" fill="#f59e0b"/>
+      <text x="14" y="24" class="s-node-title" fill="#fcd34d">WARNING: P95 Latency &gt; 250ms</text>
+      <text x="14" y="46" class="s-code">• SLA headroom threshold violated</text>
+      <text x="14" y="64" class="s-code">• Or active Chaos Fault injection detected</text>
+      <text x="14" y="82" class="s-code">• Amber card with live millisecond latency</text>
+      <text x="254" y="24" class="s-tag" fill="#f59e0b">WARNING</text>
+    </g>
+
+    <!-- Auto-Resolved Card -->
+    <g transform="translate(14, 270)">
+      <rect width="332" height="96" rx="8" fill="#0f1f16" stroke="#195436" stroke-width="1.2"/>
+      <rect x="0" y="0" width="4" height="96" rx="2" fill="#10b981"/>
+      <text x="14" y="24" class="s-node-title" fill="#86efac">RESOLVED: 2 Healthy Cycles (6s)</text>
+      <text x="14" y="46" class="s-code">• Error rate &lt; 5% AND P95 &lt; 250ms</text>
+      <text x="14" y="64" class="s-code">• Auto-closes active incident in Slack</text>
+      <text x="14" y="82" class="s-code">• Green recovery badge with duration</text>
+      <text x="246" y="24" class="s-tag" fill="#10b981">RESOLVED</text>
+    </g>
+  </g>
+
+  <!-- Connectors Step 2 -> Step 3 -->
+  <path d="M 680 148 L 720 280" stroke="#f43f5e" stroke-width="1.5" marker-end="url(#s-red)"/>
+  <path d="M 680 258 L 720 280" stroke="#f59e0b" stroke-width="1.5" marker-end="url(#s-amber)"/>
+  <path d="M 680 368 L 720 280" stroke="#10b981" stroke-width="1.5" marker-end="url(#s-green)"/>
+
+  <!-- Step 3: Slack Webhook & Channel Delivery (Right, x=720) -->
+  <g transform="translate(720, 85)">
+    <rect width="440" height="395" rx="12" fill="#0f121a" stroke="#222838" stroke-width="1.2"/>
+    <rect x="0" y="0" width="440" height="34" rx="12" fill="#141824"/>
+    <text x="14" y="22" class="s-header" fill="#10b981">3. Slack Channel Delivery</text>
+
+    <!-- Webhook Dispatch Box -->
+    <g transform="translate(14, 50)">
+      <rect width="412" height="110" rx="8" fill="url(#sCard)" stroke="#262d3e" stroke-width="1"/>
+      <rect x="0" y="0" width="4" height="110" rx="2" fill="#38bdf8"/>
+      <text x="14" y="24" class="s-node-title">Slack Incoming Webhook (POST)</text>
+      <text x="14" y="46" class="s-code">Payload: Slack Block Kit JSON</text>
+      <text x="14" y="64" class="s-code">• HTTP/1.1 TLS 1.3 POST to https://hooks.slack.com/...</text>
+      <text x="14" y="82" class="s-code">• Asynchronous non-blocking dispatch (zero worker stall)</text>
+      <text x="14" y="100" class="s-code">• Timeout: 5.0s with error catch</text>
+    </g>
+
+    <!-- Slack Notification Card Mockup -->
+    <g transform="translate(14, 180)">
+      <rect width="412" height="185" rx="8" fill="#141722" stroke="#2e354a" stroke-width="1.2"/>
+      <rect x="0" y="0" width="4" height="185" rx="2" fill="#f43f5e"/>
+      <text x="16" y="24" class="s-node-title" fill="#f8fafc">SimianX SRE Sentinel Alert</text>
+      <text x="320" y="24" class="s-tag" fill="#64748b">#sre-alerts</text>
+      <path d="M 16 36 L 396 36" stroke="#252c3e" stroke-width="1"/>
+      
+      <text x="16" y="58" class="s-code" fill="#fca5a5">• Severity: CRITICAL (Error Rate Spike)</text>
+      <text x="16" y="78" class="s-code">• Current Value: 34.3% errors (Threshold: 5.0%)</text>
+      <text x="16" y="98" class="s-code">• Throughput: 44.8 RPS · P95 Latency: 482ms</text>
+      <text x="16" y="118" class="s-code">• Cluster: AWS EKS (ap-south-1) · Namespace: simianx</text>
+      <text x="16" y="138" class="s-code">• Triggered at: 2026-11-05T15:24:00Z</text>
+      
+      <g transform="translate(16, 148)">
+        <rect width="130" height="26" rx="4" fill="#0071e3"/>
+        <text x="14" y="17" class="s-code" fill="#ffffff" font-weight="600">Open Dashboard</text>
+      </g>
+      <g transform="translate(156, 148)">
+        <rect width="130" height="26" rx="4" fill="#1e2436" stroke="#333c54" stroke-width="1"/>
+        <text x="18" y="17" class="s-code" fill="#cbd5e1">Inspect Traces</text>
+      </g>
+    </g>
+  </g>
+</svg>

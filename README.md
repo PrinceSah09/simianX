@@ -22,47 +22,7 @@ Built on AWS EKS with Infrastructure as Code (Terraform), declarative Helm packa
 
 ## Architecture
 
-```mermaid
-flowchart TD
-    subgraph Pipeline["Continuous Integration & GitOps Delivery"]
-        Dev["Developer Push"] --> Jenkins["Jenkins CI Pipeline<br/>• Pytest + Ruff Linting<br/>• Trivy CVE Security Scan<br/>• Build & Push Immutable Docker Images"]
-        Jenkins -->|Pushes Images| ECR[("AWS ECR<br/>Private Container Registry")]
-        Jenkins -->|Auto-Commit Tag| GitOps["GitOps Manifest Repo<br/>• Helm values-dev / values-prod<br/>• Cryptographic Audit Trail"]
-        GitOps -.->|In-Cluster Pull| Argo["ArgoCD Controller<br/>• Automated Drift Detection<br/>• Zero-Downtime Rolling Update"]
-    end
-
-    subgraph Cluster["AWS EKS Multi-AZ Cluster (ap-south-1)"]
-        Edge["CloudFront CDN + AWS WAFv2<br/>(OWASP Top 10 + Rate Limiting)"] --> ALB["AWS Application Load Balancer<br/>(Public Subnets)"]
-        
-        Argo ==>|Reconciles State| Fleet
-        
-        subgraph Fleet["Workload Tier (Private /20 Subnets)"]
-            ALB --> FE["Frontend Pods<br/>React 19 + Nginx SPA"]
-            ALB --> BE["Backend Pod Fleet<br/>FastAPI SRE Engine (:8000)"]
-            BE --> Prom["Prometheus Scraper (:9090)<br/>• Real-time P50, P90, P95, P99 Histograms<br/>• 2-second Scrape Loop"]
-        end
-    end
-
-    classDef dev fill:#f8fafc,stroke:#94a3b8,stroke-width:1.5px,color:#0f172a;
-    classDef ci fill:#eff6ff,stroke:#3b82f6,stroke-width:1.5px,color:#1e40af;
-    classDef ecr fill:#fef3c7,stroke:#f59e0b,stroke-width:1.5px,color:#92400e;
-    classDef git fill:#faf5ff,stroke:#a855f7,stroke-width:1.5px,color:#6b21a8;
-    classDef cd fill:#ecfdf5,stroke:#10b981,stroke-width:1.5px,color:#065f46;
-    classDef cluster fill:#ffffff,stroke:#6b7280,stroke-width:1.5px;
-    classDef edge fill:#fef3c7,stroke:#f59e0b,stroke-width:1.5px,color:#92400e;
-    classDef app fill:#f0fdf4,stroke:#22c55e,stroke-width:1.5px,color:#166534;
-    classDef obs fill:#fff7ed,stroke:#f97316,stroke-width:1.5px,color:#9a3412;
-
-    class Dev dev;
-    class Jenkins ci;
-    class ECR ecr;
-    class GitOps git;
-    class Argo cd;
-    class Cluster,Fleet cluster;
-    class Edge,ALB edge;
-    class FE,BE app;
-    class Prom obs;
-```
+![SimianX System Architecture](docs/screenshots/simianx_system_architecture.svg)
 
 ---
 
@@ -71,7 +31,9 @@ flowchart TD
 * **High-Density Networking:** Multi-AZ AWS EKS v1.31 provisioned on `/20` private subnets (4,096 IPs per subnet) to eliminate AWS VPC CNI IP-exhaustion during pod autoscaling.
 * **Edge Security & CDN:** Multi-Origin CloudFront with S3 Origin Access Control (OAC) for static assets and AWS WAF (6 managed and custom rules for OWASP Top 10 and rate-limiting) protecting upstream Kubernetes ingress.
 * **Declarative GitOps:** Jenkins CI packages containers and updates environment-scoped Helm values; in-cluster Argo CD pulls and reconciles state automatically.
-* **SRE Telemetry & Percentiles:** Asynchronous FastAPI workload generator calculating real-time P50, P90, P95, and P99 latency quantiles streamed to Prometheus and visualized on Grafana.
+* **SRE Telemetry & Percentiles:** Asynchronous FastAPI workload generator calculating real-time P50, P90, P95, and P99 latency quantiles streamed to Prometheus and visualized on a bespoke Apple-grade telemetry cockpit.
+* **OpenTelemetry Distributed Tracing:** Full end-to-end W3C `traceparent` context propagation with live interactive waterfall span inspector.
+* **Automated Slack Incident Alerting:** Thread-safe background monitoring engine evaluating Golden Signals with flapping prevention (2 consecutive healthy cycles) and debounce cooldowns.
 
 ---
 
@@ -83,10 +45,11 @@ flowchart TD
 | **Edge Security** | CloudFront + AWS WAFv2 | Global CDN with rate-limiting and OWASP protection |
 | **Infrastructure as Code** | Terraform | Environment-isolated workspaces with S3 remote state locking |
 | **Package Management** | Helm v3 | Parameterized charts with environment overrides (`dev`, `prod`) |
-| **Continuous Integration** | Jenkins | Automated testing, Trivy CVE scanning, and image publishing |
+| **Continuous Integration** | Jenkins | Automated testing (35 unit & integration tests), Trivy CVE scanning, and image publishing |
 | **Continuous Delivery** | Argo CD | In-cluster GitOps engine with automated drift detection |
-| **Observability** | Prometheus + Grafana | Service metrics, Golden Signals, and latency histograms |
-| **Application Services** | FastAPI + React 19 | Python 3.12 async backend & TypeScript dark-mode dashboard |
+| **Observability & Tracing** | Prometheus + OpenTelemetry | Service metrics, Golden Signals, latency histograms, and distributed span waterfall |
+| **Incident Alerting** | Slack Block Kit | Native incident lifecycle dispatch with anti-flapping state transitions |
+| **Application Services** | FastAPI + React 19 | Python 3.12 async backend & TypeScript Apple HIG telemetry cockpit |
 
 ---
 

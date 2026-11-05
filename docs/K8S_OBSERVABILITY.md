@@ -7,64 +7,7 @@
 
 ## Architecture Overview
 
-```mermaid
-flowchart TD
-    subgraph Host["Host macOS Environment"]
-        Browser["Host Browser<br/><b>http://localhost:30080</b>"]
-        PromUI["Prometheus UI<br/><b>http://localhost:30090</b>"]
-    end
-
-    subgraph KindCluster["Kind Kubernetes Cluster: simianx"]
-        subgraph IngressTier["Edge Ingress & Reverse Proxy"]
-            NP_FE["NodePort 30080"]
-            NP_PROM["NodePort 30090"]
-            FE["simianx-frontend Pod<br/>• React 19 SPA (Vite)<br/>• Nginx API Reverse Proxy"]
-        end
-
-        subgraph ServiceTier["Service Routing Layer"]
-            BE_SVC["simianx-backend Service<br/>(ClusterIP :8000)"]
-        end
-
-        subgraph WorkloadTier["FastAPI Backend Fleet (Auto-scaled 2 - 10 Pods)"]
-            Pod1["simianx-backend-pod-1<br/>:8000"]
-            Pod2["simianx-backend-pod-2<br/>:8000"]
-            PodN["simianx-backend-pod-N<br/>:8000"]
-        end
-
-        subgraph ObservabilityTier["Continuous Observability Engine"]
-            PromPod["Prometheus Pod<br/>• kubernetes_sd_pods discovery<br/>• 2s scrape frequency"]
-        end
-    end
-
-    Browser -->|HTTP Traffic| NP_FE
-    NP_FE --> FE
-    FE -->|proxy_pass /api/v1| BE_SVC
-
-    BE_SVC -->|kube-proxy Load Balance| Pod1
-    BE_SVC -->|kube-proxy Load Balance| Pod2
-    BE_SVC -->|kube-proxy Load Balance| PodN
-
-    PromPod -.->|Scrapes /metrics| Pod1
-    PromPod -.->|Scrapes /metrics| Pod2
-    PromPod -.->|Scrapes /metrics| PodN
-
-    PromUI -->|PromQL Query Engine| NP_PROM
-    NP_PROM --> PromPod
-
-    classDef host fill:#f8f9fa,stroke:#d1d5db,stroke-width:1.5px,color:#111827;
-    classDef cluster fill:#ffffff,stroke:#9ca3af,stroke-width:1.5px,stroke-dasharray: 4 4,color:#111827;
-    classDef edge fill:#eff6ff,stroke:#3b82f6,stroke-width:1.5px,color:#1e40af;
-    classDef svc fill:#f0fdf4,stroke:#22c55e,stroke-width:1.5px,color:#166534;
-    classDef pod fill:#faf5ff,stroke:#a855f7,stroke-width:1.5px,color:#6b21a8;
-    classDef obs fill:#fff7ed,stroke:#f97316,stroke-width:1.5px,color:#9a3412;
-
-    class Host,Browser,PromUI host;
-    class KindCluster cluster;
-    class IngressTier,NP_FE,NP_PROM,FE edge;
-    class ServiceTier,BE_SVC svc;
-    class WorkloadTier,Pod1,Pod2,PodN pod;
-    class ObservabilityTier,PromPod obs;
-```
+![SimianX System Architecture](screenshots/simianx_system_architecture.svg)
 
 ---
 
@@ -73,80 +16,6 @@ flowchart TD
 Below is the complete end-to-end data pipeline showing how traffic flows from clients and chaos injectors through OpenTelemetry tracing, in-memory sliding-window metrics, Prometheus dynamic Kubernetes scraping, and the React 19 Cockpit:
 
 ![SimianX Observability Architecture](screenshots/simianx_observability_architecture.png)
-
-```mermaid
-flowchart TD
-    subgraph Client["Traffic Sources"]
-        User["Browser / HTTP Client"]
-        Chaos["Chaos Workload Generator<br/>• Traffic Burst (10-50 RPS)<br/>• Cascading 5xx Faults<br/>• Gaussian Tail Latencies"]
-    end
-
-    subgraph FastAPI["SimianX Backend Core (:8000)"]
-        Middleware["record_telemetry_middleware<br/>• High-precision time.perf_counter()<br/>• Injects X-Trace-Id header<br/>• Filters admin/polling noise"]
-        
-        subgraph OTelSub["OpenTelemetry (OTel) SDK"]
-            FastAPIInst["FastAPIInstrumentor<br/>(Server Root Spans)"]
-            HTTPXInst["HTTPXClientInstrumentor<br/>(Client Child Spans)"]
-            Tracer["TracerProvider<br/>Resource: simianx-backend, k8s.pod"]
-            
-            subgraph DualExporters["Dual Span Processors"]
-                BatchProc["BatchSpanProcessor<br/>→ OTLPSpanExporter (Proto/HTTP)<br/>(External Grafana Alloy / Tempo)"]
-                SimpleProc["SimpleSpanProcessor<br/>→ BufferSpanExporter<br/>(In-Memory Ring Buffer: 200 traces)"]
-            end
-        end
-
-        subgraph MetricsSub["Metrics Engine"]
-            MemCollector["MetricsCollector (In-Memory)<br/>• 10s Rolling Sliding Window<br/>• P50 / P90 / P95 / P99 Quantiles<br/>• Error Rate & Availability"]
-            PromExporter["record_prometheus_request()<br/>• simianx_http_requests_total<br/>• simianx_http_request_duration_seconds"]
-        end
-
-        subgraph LogsSub["Live Logs Engine"]
-            LogBuffer["append_request_log()<br/>• Microsecond timestamps<br/>• Correlated tr-xxx Trace ID<br/>• Status & Chaos annotations"]
-        end
-    end
-
-    subgraph Cluster["Kubernetes Infrastructure"]
-        Prometheus["Prometheus Server (:9090)<br/>• role: pod dynamic discovery<br/>• Scrapes GET /metrics every 2s"]
-    end
-
-    subgraph UI["SimianX Frontend Cockpit (:3000)"]
-        Rings["Apple Activity Rings<br/>(RPS, Latency Headroom, Availability)"]
-        TracesUI["Trace Waterfall Viewer<br/>(Parent-Child Spans, Offsets, Timeline)"]
-        Console["Live Terminal Console<br/>(200 OK, 5xx Chaos Badges, Trace Chips)"]
-    end
-
-    User --> Middleware
-    Chaos --> Middleware
-    Middleware --> FastAPIInst
-    FastAPIInst --> Tracer
-    Tracer --> BatchProc
-    Tracer --> SimpleProc
-    Middleware --> MemCollector
-    Middleware --> PromExporter
-    Middleware --> LogBuffer
-
-    PromExporter -.->|Scraped by| Prometheus
-    Prometheus -.->|PromQL Queries| PromClient["PrometheusClient Service<br/>(Resilient Fallback)"]
-    PromClient --> Rings
-    SimpleProc --> TracesUI
-    LogBuffer --> Console
-
-    classDef client fill:#f8fafc,stroke:#94a3b8,stroke-width:1.5px,color:#0f172a;
-    classDef mw fill:#eff6ff,stroke:#3b82f6,stroke-width:1.5px,color:#1e40af;
-    classDef otel fill:#faf5ff,stroke:#a855f7,stroke-width:1.5px,color:#6b21a8;
-    classDef metrics fill:#f0fdf4,stroke:#22c55e,stroke-width:1.5px,color:#166534;
-    classDef logs fill:#fff7ed,stroke:#f97316,stroke-width:1.5px,color:#9a3412;
-    classDef prom fill:#fef3c7,stroke:#f59e0b,stroke-width:1.5px,color:#92400e;
-    classDef ui fill:#ffffff,stroke:#64748b,stroke-width:1.5px,color:#0f172a;
-
-    class Client,User,Chaos client;
-    class Middleware mw;
-    class OTelSub,FastAPIInst,HTTPXInst,Tracer,DualExporters,BatchProc,SimpleProc otel;
-    class MetricsSub,MemCollector,PromExporter metrics;
-    class LogsSub,LogBuffer logs;
-    class Cluster,Prometheus prom;
-    class UI,Rings,TracesUI,Console,PromClient ui;
-```
 
 ### Core Architecture Highlights:
 
@@ -271,55 +140,30 @@ SimianX includes a native, thread-safe alerting engine (`SlackAlerter`) that con
 
 ### Alerting Pipeline Architecture
 
-```mermaid
-flowchart LR
-    Telemetry["FastAPI Lifespan Loop<br/>(Every 3.0s Evaluation)"] --> Alerter["SlackAlerter Service<br/>• Thread-Safe RLock<br/>• 30s Debounce Cooldown<br/>• Flapping Prevention"]
-    
-    Alerter --> Conditions{"Bad Condition<br/>Check"}
-    
-    Conditions -->|Error Rate > 5%| Critical["🚨 Incident: CRITICAL<br/>Color: #dc2626<br/>Slack Block Kit Card"]
-    Conditions -->|P95 > 250ms| Warning["⚠️ Incident: WARNING<br/>Color: #f59e0b<br/>Slack Block Kit Card"]
-    Conditions -->|Chaos Fault Injection| Warning
-    Conditions -->|2x Healthy Cycles| Resolved["✅ Incident: RESOLVED<br/>Color: #16a34a<br/>Auto-Healing Notice"]
-
-    Critical --> Webhook["Slack Incoming Webhook<br/>(POST JSON)"]
-    Warning --> Webhook
-    Resolved --> Webhook
-    Webhook --> Channel["#sre-alerts Channel"]
-
-    classDef trigger fill:#fee2e2,stroke:#ef4444,stroke-width:1.5px,color:#991b1b;
-    classDef warn fill:#fef3c7,stroke:#f59e0b,stroke-width:1.5px,color:#92400e;
-    classDef ok fill:#dcfce7,stroke:#22c55e,stroke-width:1.5px,color:#166534;
-    classDef base fill:#f8fafc,stroke:#94a3b8,stroke-width:1.5px,color:#0f172a;
-
-    class Critical trigger;
-    class Warning warn;
-    class Resolved ok;
-    class Telemetry,Alerter,Conditions,Webhook,Channel base;
-```
+![SimianX Slack Incident Alerting Pipeline](screenshots/simianx_slack_alerting_pipeline.svg)
 
 ### 1. Monitored Bad Conditions & Thresholds
 
 | Condition | Threshold | Severity | Description |
 | :--- | :--- | :--- | :--- |
-| **High Error Rate** | `error_rate > 5.0%` | **CRITICAL** (`#dc2626`) | 5xx response surge exceeding the reliability budget |
-| **High P95 Latency** | `p95_latency > 250.0ms` | **WARNING** (`#f59e0b`) | Breaches acceptable tail-latency SLA under heavy load |
-| **Chaos Fault Injection** | Status `running` & `scenario != traffic_burst` | **WARNING** (`#f59e0b`) | Intentional fault injection experiment active (e.g. database delay) |
-| **System Healthy** | Error rate $\le 5\%$ & P95 $\le 250$ms | **RESOLVED** (`#16a34a`) | Requires 2 consecutive cycles to emit auto-recovery notice |
+| **High Error Rate** | `error_rate > 5.0%` | **CRITICAL** (`#ff3b30`) | 5xx response surge exceeding the reliability budget |
+| **High P95 Latency** | `p95_latency > 250.0ms` | **WARNING** (`#ff9500`) | Breaches acceptable tail-latency SLA under heavy load |
+| **Chaos Fault Injection** | Status `running` & `scenario != traffic_burst` | **WARNING** (`#ff9500`) | Intentional fault injection experiment active (e.g. database delay) |
+| **System Healthy** | Error rate $\le 5\%$ & P95 $\le 250$ms | **RESOLVED** (`#34c759`) | Requires 2 consecutive cycles to emit auto-recovery notice |
 
 ### 2. Flapping Prevention & Anti-Spam Protections
 
-- **Debounce Cooldown (`ALERT_COOLDOWN_SECONDS = 30`)**: Once an alert triggers, repeated incident notifications are throttled so SRE channels are not flooded while troubleshooting.
+- **Debounce Cooldown (`ALERT_COOLDOWN_SECONDS = 60`)**: Once an alert triggers, repeated incident notifications are throttled so SRE channels are not flooded while troubleshooting.
 - **Flapping Suppression (`HEALTHY_CYCLES_TO_RESOLVE = 2`)**: Recovery alerts are only dispatched after two consecutive healthy polling cycles, preventing transient metric dips from firing premature resolution cards.
 - **Noise Isolation**: Admin telemetry routes (`/api/v1/alerts`, `/metrics`, `/live-logs`) are excluded from Prometheus counters and latency sliding windows.
 
 ### 3. Slack Block Kit Card Format
 
-Incident cards contain rich contextual fields for immediate triage:
-- **Title & Badge**: Severity indicator (`🚨 SimianX Incident Alert`, `⚠️ Performance Warning`, `✅ Incident Resolved`)
-- **Telemetry Snapshot**: Real-time RPS, P95 latency (ms), Error Rate (%), Active Pod replicas
-- **Environment Context**: Kubernetes cluster name, pod identifier, timestamp
-- **Action Links**: Direct one-click deep link to SimianX UI Cockpit
+Incident cards follow clean, Apple-inspired typography with zero noisy emojis:
+- **Title**: Severity and scenario header (e.g. `*High Error Rate (25.0%)*`, `*P95 Latency SLA Breached*`, `*Resolved: System Health Restored*`)
+- **Telemetry Snapshot**: Real-time Error Rate (%), P95 latency (ms), and Throughput (req/s)
+- **Environment Context**: Control plane stamp and UTC timestamp
+- **Color Accent**: Subtle left border accent (`#ff3b30` Red for Critical, `#ff9500` Orange for Warning, `#34c759` Green for Resolved, `#0071e3` Blue for Test)
 
 ### 4. Configuration & API Endpoints
 
@@ -328,7 +172,7 @@ Alerting can be configured via environment variables, Helm values, or directly a
 #### Environment Variables & Helm
 ```yaml
 # helm/simianx/values.yaml
-slackWebhookUrl: "https://hooks.slack.com/services/YOUR/WEBHOOK/URL"
+slackWebhookUrl: "https://hooks.slack.com/services/YOUR_WORKSPACE_ID/YOUR_CHANNEL_ID/YOUR_WEBHOOK_TOKEN"
 slackChannel: "#sre-alerts"
 slackAlertsEnabled: true
 ```

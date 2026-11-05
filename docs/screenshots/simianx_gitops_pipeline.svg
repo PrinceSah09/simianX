@@ -1,0 +1,256 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 690" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0a0c12"/>
+      <stop offset="100%" stop-color="#11141f"/>
+    </linearGradient>
+    <linearGradient id="cardGrad2" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#161a26"/>
+      <stop offset="100%" stop-color="#11131c"/>
+    </linearGradient>
+    <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#64748b"/>
+    </marker>
+    <marker id="arr-blue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#38bdf8"/>
+    </marker>
+    <marker id="arr-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#34c759"/>
+    </marker>
+  </defs>
+
+  <style>
+    .p-title { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif; font-size: 21px; font-weight: 700; fill: #f8fafc; }
+    .p-sub { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif; font-size: 12px; fill: #64748b; }
+    .p-header { font-family: -apple-system, BlinkMacSystemFont, sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; }
+    .p-node-title { font-family: -apple-system, BlinkMacSystemFont, sans-serif; font-size: 13px; font-weight: 600; fill: #f1f5f9; }
+    .p-node-desc { font-family: -apple-system, BlinkMacSystemFont, sans-serif; font-size: 11px; fill: #94a3b8; }
+    .p-code { font-family: "SF Mono", monospace; font-size: 10.5px; fill: #cbd5e1; }
+    .p-tag { font-family: -apple-system, BlinkMacSystemFont, sans-serif; font-size: 9.5px; font-weight: 700; text-transform: uppercase; }
+  </style>
+
+  <rect width="1200" height="690" rx="16" fill="url(#bgGrad2)"/>
+  <rect x="1" y="1" width="1198" height="688" rx="15" fill="none" stroke="#1f2433" stroke-width="1.5"/>
+
+  <!-- Top Title -->
+  <g transform="translate(40, 36)">
+    <text x="0" y="17" class="p-title">SimianX · 5-Pipeline Modular Delivery Architecture</text>
+    <text x="0" y="36" class="p-sub">Independent CI/CD Lifecycle Isolation: PR Quality Gates, Terraform IaC, Jenkins Releases, S3/CloudFront Edge, and ArgoCD GitOps</text>
+  </g>
+
+  <!-- Horizontal Pipeline Cards (5 Columns) -->
+  <!-- Pipeline 1: PR Gatekeeper -->
+  <g transform="translate(40, 90)">
+    <rect width="216" height="555" rx="12" fill="#0f121a" stroke="#222838" stroke-width="1.2"/>
+    <rect x="0" y="0" width="216" height="34" rx="12" fill="#141824"/>
+    <text x="14" y="22" class="p-header" fill="#38bdf8">1. PR Gatekeeper</text>
+    <text x="14" y="56" class="p-tag" fill="#64748b">GITHUB ACTIONS</text>
+    
+    <g transform="translate(12, 70)">
+      <rect width="192" height="110" rx="8" fill="url(#cardGrad2)" stroke="#272e40" stroke-width="1"/>
+      <rect x="0" y="0" width="3" height="110" rx="1.5" fill="#0071e3"/>
+      <text x="12" y="22" class="p-node-title">Automated Checks</text>
+      <text x="12" y="42" class="p-code">• Pytest (35 tests)</text>
+      <text x="12" y="58" class="p-code">• Ruff Python Linter</text>
+      <text x="12" y="74" class="p-code">• Vite React Build</text>
+      <text x="12" y="90" class="p-code">• Helm Template Lint</text>
+    </g>
+
+    <g transform="translate(12, 195)">
+      <rect width="192" height="85" rx="8" fill="url(#cardGrad2)" stroke="#272e40" stroke-width="1"/>
+      <text x="12" y="22" class="p-node-title">Merge Conditions</text>
+      <text x="12" y="42" class="p-node-desc">• 100% Gates Green</text>
+      <text x="12" y="58" class="p-node-desc">• Branch Protection Rule</text>
+      <text x="12" y="74" class="p-node-desc">• Required Peer Sign-off</text>
+    </g>
+
+    <g transform="translate(12, 295)">
+      <rect width="192" height="120" rx="8" fill="url(#cardGrad2)" stroke="#272e40" stroke-width="1"/>
+      <text x="12" y="22" class="p-node-title">Trigger Event</text>
+      <text x="12" y="42" class="p-code">• pull_request: [main]</text>
+      <text x="12" y="58" class="p-node-desc">Runs in 4 parallel jobs</text>
+      <text x="12" y="76" class="p-code">• Fail-fast enabled</text>
+      <text x="12" y="96" class="p-node-desc">Execution time: ~42s</text>
+    </g>
+
+    <g transform="translate(12, 430)">
+      <rect width="192" height="105" rx="8" fill="#141926" stroke="#222a3d" stroke-width="1"/>
+      <text x="12" y="22" class="p-node-title" fill="#38bdf8">Output Artifacts</text>
+      <text x="12" y="42" class="p-code">• JUnit Test Reports</text>
+      <text x="12" y="58" class="p-code">• Coverage Badge (94%)</text>
+      <text x="12" y="74" class="p-code">• Helm Lint Verification</text>
+    </g>
+  </g>
+
+  <!-- Pipeline 2: Terraform IaC -->
+  <g transform="translate(272, 90)">
+    <rect width="216" height="555" rx="12" fill="#0f121a" stroke="#222838" stroke-width="1.2"/>
+    <rect x="0" y="0" width="216" height="34" rx="12" fill="#141824"/>
+    <text x="14" y="22" class="p-header" fill="#a855f7">2. Terraform IaC</text>
+    <text x="14" y="56" class="p-tag" fill="#64748b">TERRAFORM WORKSPACES</text>
+
+    <g transform="translate(12, 70)">
+      <rect width="192" height="110" rx="8" fill="url(#cardGrad2)" stroke="#272e40" stroke-width="1"/>
+      <rect x="0" y="0" width="3" height="110" rx="1.5" fill="#8b5cf6"/>
+      <text x="12" y="22" class="p-node-title">PR Plan / Merge Apply</text>
+      <text x="12" y="42" class="p-code">• S3 Remote State</text>
+      <text x="12" y="58" class="p-code">• DynamoDB Locking</text>
+      <text x="12" y="74" class="p-code">• Multi-AZ VPC /20</text>
+      <text x="12" y="90" class="p-code">• AWS EKS + ALB + WAF</text>
+    </g>
+
+    <g transform="translate(12, 195)">
+      <rect width="192" height="85" rx="8" fill="url(#cardGrad2)" stroke="#272e40" stroke-width="1"/>
+      <text x="12" y="22" class="p-node-title">Blast Radius Guard</text>
+      <text x="12" y="42" class="p-node-desc">• Separate dev / prod</text>
+      <text x="12" y="58" class="p-node-desc">• Least-Privilege IAM</text>
+      <text x="12" y="74" class="p-node-desc">• Drift Detection Alert</text>
+    </g>
+
+    <g transform="translate(12, 295)">
+      <rect width="192" height="120" rx="8" fill="url(#cardGrad2)" stroke="#272e40" stroke-width="1"/>
+      <text x="12" y="22" class="p-node-title">Resources Created</text>
+      <text x="12" y="42" class="p-code">• VPC 10.0.0.0/16</text>
+      <text x="12" y="58" class="p-code">• 2x NAT Gateways</text>
+      <text x="12" y="74" class="p-code">• EKS v1.31 Control Plane</text>
+      <text x="12" y="90" class="p-code">• WAFv2 Web ACL (6 rules)</text>
+    </g>
+
+    <g transform="translate(12, 430)">
+      <rect width="192" height="105" rx="8" fill="#141926" stroke="#222a3d" stroke-width="1"/>
+      <text x="12" y="22" class="p-node-title" fill="#a855f7">State Output</text>
+      <text x="12" y="42" class="p-code">• tfstate S3 Bucket</text>
+      <text x="12" y="58" class="p-code">• EKS Cluster Endpoint</text>
+      <text x="12" y="74" class="p-code">• OIDC IAM Provider ARN</text>
+    </g>
+  </g>
+
+  <!-- Pipeline 3: Jenkins CI -->
+  <g transform="translate(504, 90)">
+    <rect width="216" height="555" rx="12" fill="#0f121a" stroke="#222838" stroke-width="1.2"/>
+    <rect x="0" y="0" width="216" height="34" rx="12" fill="#141824"/>
+    <text x="14" y="22" class="p-header" fill="#f59e0b">3. Jenkins CI</text>
+    <text x="14" y="56" class="p-tag" fill="#64748b">ENTERPRISE RELEASE</text>
+
+    <g transform="translate(12, 70)">
+      <rect width="192" height="110" rx="8" fill="url(#cardGrad2)" stroke="#272e40" stroke-width="1"/>
+      <rect x="0" y="0" width="3" height="110" rx="1.5" fill="#f59e0b"/>
+      <text x="12" y="22" class="p-node-title">Build &amp; Security</text>
+      <text x="12" y="42" class="p-code">• Declarative Groovy</text>
+      <text x="12" y="58" class="p-code">• Trivy CVE Scanner</text>
+      <text x="12" y="74" class="p-code">• Immutable Images</text>
+      <text x="12" y="90" class="p-code">• AWS ECR Registry</text>
+    </g>
+
+    <g transform="translate(12, 195)">
+      <rect width="192" height="85" rx="8" fill="url(#cardGrad2)" stroke="#272e40" stroke-width="1"/>
+      <text x="12" y="22" class="p-node-title">Audit Trail</text>
+      <text x="12" y="42" class="p-node-desc">• Git SHA Tagging</text>
+      <text x="12" y="58" class="p-node-desc">• Build Provenance Log</text>
+      <text x="12" y="74" class="p-node-desc">• Nonce Verification</text>
+    </g>
+
+    <g transform="translate(12, 295)">
+      <rect width="192" height="120" rx="8" fill="url(#cardGrad2)" stroke="#272e40" stroke-width="1"/>
+      <text x="12" y="22" class="p-node-title">GitOps Update</text>
+      <text x="12" y="42" class="p-code">• git clone manifest repo</text>
+      <text x="12" y="58" class="p-code">• update values-dev.yaml</text>
+      <text x="12" y="74" class="p-code">• git commit [skip ci]</text>
+      <text x="12" y="90" class="p-code">• git push origin main</text>
+    </g>
+
+    <g transform="translate(12, 430)">
+      <rect width="192" height="105" rx="8" fill="#141926" stroke="#222a3d" stroke-width="1"/>
+      <text x="12" y="22" class="p-node-title" fill="#f59e0b">Published Images</text>
+      <text x="12" y="42" class="p-code">• backend:v1.28-build42</text>
+      <text x="12" y="58" class="p-code">• frontend:v1.28-build42</text>
+      <text x="12" y="74" class="p-code">• Trivy: 0 High/Crit CVEs</text>
+    </g>
+  </g>
+
+  <!-- Pipeline 4: Serverless Edge -->
+  <g transform="translate(736, 90)">
+    <rect width="216" height="555" rx="12" fill="#0f121a" stroke="#222838" stroke-width="1.2"/>
+    <rect x="0" y="0" width="216" height="34" rx="12" fill="#141824"/>
+    <text x="14" y="22" class="p-header" fill="#06b6d4">4. CloudFront Edge</text>
+    <text x="14" y="56" class="p-tag" fill="#64748b">SERVERLESS CDN</text>
+
+    <g transform="translate(12, 70)">
+      <rect width="192" height="110" rx="8" fill="url(#cardGrad2)" stroke="#272e40" stroke-width="1"/>
+      <rect x="0" y="0" width="3" height="110" rx="1.5" fill="#06b6d4"/>
+      <text x="12" y="22" class="p-node-title">Static Asset Sync</text>
+      <text x="12" y="42" class="p-code">• AWS S3 Sync (dist/)</text>
+      <text x="12" y="58" class="p-code">• Origin Access (OAC)</text>
+      <text x="12" y="74" class="p-code">• Cache Invalidation</text>
+      <text x="12" y="90" class="p-code">• Global Edge Flush</text>
+    </g>
+
+    <g transform="translate(12, 195)">
+      <rect width="192" height="85" rx="8" fill="url(#cardGrad2)" stroke="#272e40" stroke-width="1"/>
+      <text x="12" y="22" class="p-node-title">Edge Performance</text>
+      <text x="12" y="42" class="p-node-desc">• Gzip &amp; Brotli Caching</text>
+      <text x="12" y="58" class="p-node-desc">• 0ms Origin Roundtrip</text>
+      <text x="12" y="74" class="p-node-desc">• TTL: 31,536,000s on JS</text>
+    </g>
+
+    <g transform="translate(12, 295)">
+      <rect width="192" height="120" rx="8" fill="url(#cardGrad2)" stroke="#272e40" stroke-width="1"/>
+      <text x="12" y="22" class="p-node-title">Invalidation Strategy</text>
+      <text x="12" y="42" class="p-code">• aws cloudfront create-</text>
+      <text x="12" y="58" class="p-code">  invalidation --paths</text>
+      <text x="12" y="74" class="p-code">  "/index.html" "/assets/*"</text>
+      <text x="12" y="90" class="p-node-desc">Instant edge propagation</text>
+    </g>
+
+    <g transform="translate(12, 430)">
+      <rect width="192" height="105" rx="8" fill="#141926" stroke="#222a3d" stroke-width="1"/>
+      <text x="12" y="22" class="p-node-title" fill="#06b6d4">Edge Endpoints</text>
+      <text x="12" y="42" class="p-code">• *.cloudfront.net</text>
+      <text x="12" y="58" class="p-code">• TLS 1.3 / HTTP/3</text>
+      <text x="12" y="74" class="p-code">• WAF Protected Ingress</text>
+    </g>
+  </g>
+
+  <!-- Pipeline 5: In-Cluster GitOps -->
+  <g transform="translate(968, 90)">
+    <rect width="192" height="555" rx="12" fill="#0f121a" stroke="#222838" stroke-width="1.2"/>
+    <rect x="0" y="0" width="192" height="34" rx="12" fill="#141824"/>
+    <text x="14" y="22" class="p-header" fill="#10b981">5. ArgoCD</text>
+    <text x="14" y="56" class="p-tag" fill="#64748b">GITOPS CONTROLLER</text>
+
+    <g transform="translate(12, 70)">
+      <rect width="168" height="110" rx="8" fill="url(#cardGrad2)" stroke="#272e40" stroke-width="1"/>
+      <rect x="0" y="0" width="3" height="110" rx="1.5" fill="#10b981"/>
+      <text x="10" y="22" class="p-node-title">Automated Sync</text>
+      <text x="10" y="42" class="p-code">• In-Cluster Pull</text>
+      <text x="10" y="58" class="p-code">• Drift Detection</text>
+      <text x="10" y="74" class="p-code">• Rolling Updates</text>
+      <text x="10" y="90" class="p-code">• Instant Rollback</text>
+    </g>
+
+    <g transform="translate(12, 195)">
+      <rect width="168" height="85" rx="8" fill="url(#cardGrad2)" stroke="#272e40" stroke-width="1"/>
+      <text x="10" y="22" class="p-node-title">Zero Secrets</text>
+      <text x="10" y="42" class="p-node-desc">• No kubectl in CI</text>
+      <text x="10" y="58" class="p-node-desc">• In-Cluster SA token</text>
+      <text x="10" y="74" class="p-node-desc">• Strict Private Subnets</text>
+    </g>
+
+    <g transform="translate(12, 295)">
+      <rect width="168" height="120" rx="8" fill="url(#cardGrad2)" stroke="#272e40" stroke-width="1"/>
+      <text x="10" y="22" class="p-node-title">Reconcile Loop</text>
+      <text x="10" y="42" class="p-code">• 3m Poll Interval</text>
+      <text x="10" y="58" class="p-code">• Webhook Trigger</text>
+      <text x="10" y="74" class="p-code">• Auto-heal enabled</text>
+      <text x="10" y="90" class="p-code">• Prune resources</text>
+    </g>
+
+    <g transform="translate(12, 430)">
+      <rect width="168" height="105" rx="8" fill="#141926" stroke="#222a3d" stroke-width="1"/>
+      <text x="10" y="22" class="p-node-title" fill="#10b981">Live Cluster State</text>
+      <text x="10" y="42" class="p-code">• Synced</text>
+      <text x="10" y="58" class="p-code">• Healthy</text>
+      <text x="10" y="74" class="p-code">• 0 Configuration Drift</text>
+    </g>
+  </g>
+</svg>

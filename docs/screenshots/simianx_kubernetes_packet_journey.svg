@@ -1,0 +1,167 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 480" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgK8sNet" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0a0c12"/>
+      <stop offset="100%" stop-color="#111420"/>
+    </linearGradient>
+    <linearGradient id="netCard" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#181c28"/>
+      <stop offset="100%" stop-color="#121520"/>
+    </linearGradient>
+    <marker id="net-blue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#38bdf8"/>
+    </marker>
+  </defs>
+
+  <style>
+    .k-title { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif; font-size: 21px; font-weight: 700; fill: #f8fafc; }
+    .k-sub { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif; font-size: 12px; fill: #64748b; }
+    .k-header { font-family: -apple-system, BlinkMacSystemFont, sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; }
+    .k-node-title { font-family: -apple-system, BlinkMacSystemFont, sans-serif; font-size: 12.5px; font-weight: 600; fill: #f1f5f9; }
+    .k-code { font-family: "SF Mono", monospace; font-size: 10px; fill: #cbd5e1; }
+    .k-tag { font-family: -apple-system, BlinkMacSystemFont, sans-serif; font-size: 9px; font-weight: 700; text-transform: uppercase; }
+    .k-step { font-family: -apple-system, BlinkMacSystemFont, sans-serif; font-size: 11px; font-weight: 800; fill: #38bdf8; }
+  </style>
+
+  <rect width="1200" height="480" rx="16" fill="url(#bgK8sNet)"/>
+  <rect x="1" y="1" width="1198" height="478" rx="15" fill="none" stroke="#1f2433" stroke-width="1.5"/>
+
+  <!-- Top Title -->
+  <g transform="translate(40, 36)">
+    <text x="0" y="17" class="k-title">SimianX · Kubernetes Networking &amp; Packet Journey Under the Hood</text>
+    <text x="0" y="36" class="k-sub">Linux Network Namespaces (netns) · veth Pairs · Kube-Proxy iptables NAT · CoreDNS Service Discovery · Pod Ingress</text>
+  </g>
+
+  <!-- 5 Sequential Packet Journey Cards -->
+  <!-- 1. Client Browser -->
+  <g transform="translate(40, 95)">
+    <rect width="205" height="345" rx="12" fill="#0f121a" stroke="#222838" stroke-width="1.2"/>
+    <rect x="0" y="0" width="205" height="32" rx="12" fill="#141824"/>
+    <text x="12" y="21" class="k-header" fill="#38bdf8">1. User Browser</text>
+    <text x="12" y="52" class="k-tag" fill="#64748b">CLIENT ORIGIN</text>
+
+    <g transform="translate(10, 65)">
+      <rect width="185" height="260" rx="8" fill="url(#netCard)" stroke="#262d3e" stroke-width="1"/>
+      <rect x="0" y="0" width="3" height="260" rx="1.5" fill="#0071e3"/>
+      <text x="12" y="24" class="k-node-title">Host Request</text>
+      <text x="12" y="46" class="k-code">• User clicks Action</text>
+      <text x="12" y="66" class="k-code">• URL: localhost:30080</text>
+      <text x="12" y="86" class="k-code">• OS creates TCP socket</text>
+      <text x="12" y="106" class="k-code">• Sends TCP SYN packet</text>
+      <text x="12" y="126" class="k-code">• Dst Port: 30080</text>
+      <text x="12" y="146" class="k-code">• Dst IP: 127.0.0.1</text>
+      <text x="12" y="172" class="k-node-title" fill="#38bdf8">Network Layer</text>
+      <text x="12" y="192" class="k-code">• Host Loopback / Bridge</text>
+      <text x="12" y="212" class="k-code">• Docker NAT Port Forward</text>
+      <text x="12" y="232" class="k-code">• Hits K8s NodePort</text>
+    </g>
+  </g>
+
+  <!-- Arrow 1 -> 2 -->
+  <path d="M 245 260 L 275 260" stroke="#38bdf8" stroke-width="1.8" marker-end="url(#net-blue)"/>
+
+  <!-- 2. NodePort & Kube-Proxy iptables -->
+  <g transform="translate(275, 95)">
+    <rect width="205" height="345" rx="12" fill="#0f121a" stroke="#222838" stroke-width="1.2"/>
+    <rect x="0" y="0" width="205" height="32" rx="12" fill="#141824"/>
+    <text x="12" y="21" class="k-header" fill="#a855f7">2. Kube-Proxy NAT</text>
+    <text x="12" y="52" class="k-tag" fill="#64748b">KERNEL IPTABLES</text>
+
+    <g transform="translate(10, 65)">
+      <rect width="185" height="260" rx="8" fill="url(#netCard)" stroke="#262d3e" stroke-width="1"/>
+      <rect x="0" y="0" width="3" height="260" rx="1.5" fill="#8b5cf6"/>
+      <text x="12" y="24" class="k-node-title">iptables KUBE-NODEPORTS</text>
+      <text x="12" y="46" class="k-code">• Match: port 30080</text>
+      <text x="12" y="66" class="k-code">• Kube-Proxy manages</text>
+      <text x="12" y="86" class="k-code">  kernel PREROUTING table</text>
+      <text x="12" y="106" class="k-code">• Probabilistic DNAT rule</text>
+      <text x="12" y="126" class="k-code">• Packet Dst rewritten</text>
+      <text x="12" y="146" class="k-code">  to Nginx Pod IP:</text>
+      <text x="12" y="164" class="k-code" fill="#f59e0b">  10.244.0.19:80</text>
+      <text x="12" y="190" class="k-node-title" fill="#a855f7">Zero Context Switch</text>
+      <text x="12" y="210" class="k-code">• In-kernel packet</text>
+      <text x="12" y="230" class="k-code">  translation (<0.1ms)</text>
+    </g>
+  </g>
+
+  <!-- Arrow 2 -> 3 -->
+  <path d="M 480 260 L 510 260" stroke="#38bdf8" stroke-width="1.8" marker-end="url(#net-blue)"/>
+
+  <!-- 3. Nginx Pod Ingress -->
+  <g transform="translate(510, 95)">
+    <rect width="205" height="345" rx="12" fill="#0f121a" stroke="#222838" stroke-width="1.2"/>
+    <rect x="0" y="0" width="205" height="32" rx="12" fill="#141824"/>
+    <text x="12" y="21" class="k-header" fill="#10b981">3. Nginx Pod</text>
+    <text x="12" y="52" class="k-tag" fill="#64748b">VETH PAIR / SPA REVERSE PROXY</text>
+
+    <g transform="translate(10, 65)">
+      <rect width="185" height="260" rx="8" fill="url(#netCard)" stroke="#262d3e" stroke-width="1"/>
+      <rect x="0" y="0" width="3" height="260" rx="1.5" fill="#10b981"/>
+      <text x="12" y="24" class="k-node-title">Virtual Ethernet (veth)</text>
+      <text x="12" y="46" class="k-code">• Packet enters pod netns</text>
+      <text x="12" y="66" class="k-code">  via eth0 interface</text>
+      <text x="12" y="86" class="k-code">• Nginx receives frame</text>
+      <text x="12" y="106" class="k-code">• Match: location /api/v1</text>
+      <text x="12" y="126" class="k-code">• proxy_pass config:</text>
+      <text x="12" y="146" class="k-code" fill="#86efac">  http://simianx-backend</text>
+      <text x="12" y="164" class="k-code" fill="#86efac">  :8000</text>
+      <text x="12" y="190" class="k-node-title" fill="#10b981">In-Cluster DNS</text>
+      <text x="12" y="210" class="k-code">• Triggers DNS lookup</text>
+      <text x="12" y="230" class="k-code">  to CoreDNS server</text>
+    </g>
+  </g>
+
+  <!-- Arrow 3 -> 4 -->
+  <path d="M 715 260 L 745 260" stroke="#38bdf8" stroke-width="1.8" marker-end="url(#net-blue)"/>
+
+  <!-- 4. CoreDNS Service Discovery -->
+  <g transform="translate(745, 95)">
+    <rect width="205" height="345" rx="12" fill="#0f121a" stroke="#222838" stroke-width="1.2"/>
+    <rect x="0" y="0" width="205" height="32" rx="12" fill="#141824"/>
+    <text x="12" y="21" class="k-header" fill="#06b6d4">4. CoreDNS</text>
+    <text x="12" y="52" class="k-tag" fill="#64748b">SERVICE DISCOVERY</text>
+
+    <g transform="translate(10, 65)">
+      <rect width="185" height="260" rx="8" fill="url(#netCard)" stroke="#262d3e" stroke-width="1"/>
+      <rect x="0" y="0" width="3" height="260" rx="1.5" fill="#06b6d4"/>
+      <text x="12" y="24" class="k-node-title">DNS Resolution</text>
+      <text x="12" y="46" class="k-code">• Resolv.conf appends:</text>
+      <text x="12" y="66" class="k-code">  simianx.svc.cluster.local</text>
+      <text x="12" y="86" class="k-code">• CoreDNS answers in</text>
+      <text x="12" y="104" class="k-code">  &lt;0.5ms with ClusterIP:</text>
+      <text x="12" y="122" class="k-code" fill="#38bdf8">  10.96.142.88</text>
+      <text x="12" y="148" class="k-node-title" fill="#06b6d4">Virtual ClusterIP</text>
+      <text x="12" y="168" class="k-code">• Virtual VIP (no real NIC)</text>
+      <text x="12" y="188" class="k-code">• Second iptables hop</text>
+      <text x="12" y="208" class="k-code">• KUBE-SERVICES chain</text>
+      <text x="12" y="228" class="k-code">  balances to active pods</text>
+    </g>
+  </g>
+
+  <!-- Arrow 4 -> 5 -->
+  <path d="M 950 260 L 980 260" stroke="#38bdf8" stroke-width="1.8" marker-end="url(#net-blue)"/>
+
+  <!-- 5. FastAPI Backend Pod Fleet -->
+  <g transform="translate(980, 95)">
+    <rect width="180" height="345" rx="12" fill="#0f121a" stroke="#222838" stroke-width="1.2"/>
+    <rect x="0" y="0" width="180" height="32" rx="12" fill="#141824"/>
+    <text x="12" y="21" class="k-header" fill="#f59e0b">5. Backend Pod</text>
+    <text x="12" y="52" class="k-tag" fill="#64748b">FASTAPI CORE</text>
+
+    <g transform="translate(10, 65)">
+      <rect width="160" height="260" rx="8" fill="url(#netCard)" stroke="#262d3e" stroke-width="1"/>
+      <rect x="0" y="0" width="3" height="260" rx="1.5" fill="#f59e0b"/>
+      <text x="12" y="24" class="k-node-title">Execution</text>
+      <text x="12" y="46" class="k-code">• Dst: 10.244.0.2:8000</text>
+      <text x="12" y="66" class="k-code">• Enters pod netns</text>
+      <text x="12" y="86" class="k-code">• OTel Span created</text>
+      <text x="12" y="106" class="k-code">• Middleware tracks time</text>
+      <text x="12" y="126" class="k-code">• Executes endpoint</text>
+      <text x="12" y="146" class="k-code">• Increments histogram</text>
+      <text x="12" y="172" class="k-node-title" fill="#f59e0b">Response Trip</text>
+      <text x="12" y="192" class="k-code">• HTTP 200 / 5xx</text>
+      <text x="12" y="212" class="k-code">• Connection-tracking</text>
+      <text x="12" y="232" class="k-code">  reverses NAT flow</text>
+    </g>
+  </g>
+</svg>

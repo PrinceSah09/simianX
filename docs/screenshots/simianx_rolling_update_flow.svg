@@ -1,0 +1,149 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 500" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgRoll" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0a0c12"/>
+      <stop offset="100%" stop-color="#111420"/>
+    </linearGradient>
+    <linearGradient id="rollCard" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#181c28"/>
+      <stop offset="100%" stop-color="#121520"/>
+    </linearGradient>
+    <marker id="r-arr-blue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#38bdf8"/>
+    </marker>
+    <marker id="r-arr-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#34c759"/>
+    </marker>
+  </defs>
+
+  <style>
+    .r-title { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif; font-size: 21px; font-weight: 700; fill: #f8fafc; }
+    .r-sub { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif; font-size: 12px; fill: #64748b; }
+    .r-header { font-family: -apple-system, BlinkMacSystemFont, sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; }
+    .r-node-title { font-family: -apple-system, BlinkMacSystemFont, sans-serif; font-size: 13px; font-weight: 600; fill: #f1f5f9; }
+    .r-code { font-family: "SF Mono", monospace; font-size: 10.5px; fill: #cbd5e1; }
+    .r-tag { font-family: -apple-system, BlinkMacSystemFont, sans-serif; font-size: 9.5px; font-weight: 700; text-transform: uppercase; }
+  </style>
+
+  <rect width="1200" height="500" rx="16" fill="url(#bgRoll)"/>
+  <rect x="1" y="1" width="1198" height="498" rx="15" fill="none" stroke="#1f2433" stroke-width="1.5"/>
+
+  <!-- Top Title -->
+  <g transform="translate(40, 36)">
+    <text x="0" y="17" class="r-title">SimianX · Kubernetes Zero-Downtime Rolling Update Architecture</text>
+    <text x="0" y="36" class="r-sub">Readiness Probe Gatekeeping · ALB TargetGroup Registration · 30-Second SIGTERM Draining · Zero In-Flight Drops</text>
+  </g>
+
+  <!-- Step 1: GitOps Detection (Left, x=40) -->
+  <g transform="translate(40, 85)">
+    <rect width="250" height="375" rx="12" fill="#0f121a" stroke="#222838" stroke-width="1.2"/>
+    <rect x="0" y="0" width="250" height="34" rx="12" fill="#141824"/>
+    <text x="14" y="22" class="r-header" fill="#38bdf8">1. GitOps Trigger</text>
+
+    <g transform="translate(14, 50)">
+      <rect width="222" height="130" rx="8" fill="url(#rollCard)" stroke="#272e40" stroke-width="1"/>
+      <rect x="0" y="0" width="3" height="130" rx="1.5" fill="#0071e3"/>
+      <text x="12" y="22" class="r-node-title">Jenkins Git Commit</text>
+      <text x="12" y="42" class="r-code">• Pushes new image tag</text>
+      <text x="12" y="60" class="r-code">• values-dev.yaml</text>
+      <text x="12" y="78" class="r-code">• tag: v1.28-build42</text>
+      <text x="12" y="96" class="r-code">• Git commit: [skip ci]</text>
+      <text x="12" y="114" class="r-code">• Audit trail locked</text>
+    </g>
+
+    <g transform="translate(14, 200)">
+      <rect width="222" height="145" rx="8" fill="url(#rollCard)" stroke="#272e40" stroke-width="1"/>
+      <rect x="0" y="0" width="3" height="145" rx="1.5" fill="#8b5cf6"/>
+      <text x="12" y="22" class="r-node-title">ArgoCD Controller</text>
+      <text x="12" y="42" class="r-code">• Polls Git repo (3m / hook)</text>
+      <text x="12" y="60" class="r-code">• Compares Git vs Live EKS</text>
+      <text x="12" y="78" class="r-code">• Flags: OutOfSync</text>
+      <text x="12" y="96" class="r-code">• Reconciles state</text>
+      <text x="12" y="114" class="r-code">• maxSurge: 25%</text>
+      <text x="12" y="132" class="r-code">• maxUnavailable: 0</text>
+    </g>
+  </g>
+
+  <!-- Connector Step 1 -> Step 2 -->
+  <path d="M 290 270 L 330 270" stroke="#38bdf8" stroke-width="1.8" marker-end="url(#r-arr-blue)"/>
+
+  <!-- Step 2: Pod Lifecycle & Rolling Update (Center, x=330) -->
+  <g transform="translate(330, 85)">
+    <rect width="530" height="375" rx="12" fill="#0f121a" stroke="#222838" stroke-width="1.2"/>
+    <rect x="0" y="0" width="530" height="34" rx="12" fill="#141824"/>
+    <text x="14" y="22" class="r-header" fill="#10b981">2. Zero-Downtime Pod Rollout Sequence</text>
+
+    <!-- Stage A: Spawn New Pod -->
+    <g transform="translate(14, 46)">
+      <rect width="502" height="68" rx="8" fill="url(#rollCard)" stroke="#272e40" stroke-width="1"/>
+      <rect x="0" y="0" width="3" height="68" rx="1.5" fill="#10b981"/>
+      <text x="14" y="22" class="r-node-title">A. K8s Spawns New Pod with New Image</text>
+      <text x="14" y="42" class="r-code">Image: simianx-backend:v1.28-build42 · Status: ContainerCreating → Running</text>
+      <text x="14" y="58" class="r-code">Old pods continue taking 100% of live traffic without interruption</text>
+      <text x="430" y="22" class="r-tag" fill="#10b981">SURGE +1</text>
+    </g>
+
+    <!-- Stage B: Readiness Probe Gate -->
+    <g transform="translate(14, 126)">
+      <rect width="502" height="68" rx="8" fill="url(#rollCard)" stroke="#272e40" stroke-width="1"/>
+      <rect x="0" y="0" width="3" height="68" rx="1.5" fill="#0071e3"/>
+      <text x="14" y="22" class="r-node-title">B. Kubernetes Readiness Probe Evaluation</text>
+      <text x="14" y="42" class="r-code">GET /health on port 8000 every 5 seconds (initialDelaySeconds: 5)</text>
+      <text x="14" y="58" class="r-code">Pod marked READY only when HTTP 200 OK received with healthy database check</text>
+      <text x="420" y="22" class="r-tag" fill="#38bdf8">READINESS</text>
+    </g>
+
+    <!-- Stage C: ALB TargetGroup Shift -->
+    <g transform="translate(14, 206)">
+      <rect width="502" height="68" rx="8" fill="url(#rollCard)" stroke="#272e40" stroke-width="1"/>
+      <rect x="0" y="0" width="3" height="68" rx="1.5" fill="#f59e0b"/>
+      <text x="14" y="22" class="r-node-title">C. Ingress Routing Cutover</text>
+      <text x="14" y="42" class="r-code">AWS Load Balancer Controller registers New Pod IP into ALB TargetGroup</text>
+      <text x="14" y="58" class="r-code">ALB health check succeeds: traffic immediately begins routing to New Pod</text>
+      <text x="410" y="22" class="r-tag" fill="#f59e0b">ALB TRAFFIC</text>
+    </g>
+
+    <!-- Stage D: Graceful Draining -->
+    <g transform="translate(14, 286)">
+      <rect width="502" height="68" rx="8" fill="url(#rollCard)" stroke="#272e40" stroke-width="1"/>
+      <rect x="0" y="0" width="3" height="68" rx="1.5" fill="#f43f5e"/>
+      <text x="14" y="22" class="r-node-title">D. Graceful Termination of Old Pod (SIGTERM)</text>
+      <text x="14" y="42" class="r-code">ALB deregisters Old Pod · 30-second connection draining grace period starts</text>
+      <text x="14" y="58" class="r-code">FastAPI finishes in-flight HTTP requests · Clean zero-error termination</text>
+      <text x="416" y="22" class="r-tag" fill="#f43f5e">DRAIN &amp; EXIT</text>
+    </g>
+  </g>
+
+  <!-- Connector Step 2 -> Step 3 -->
+  <path d="M 860 270 L 900 270" stroke="#34c759" stroke-width="1.8" marker-end="url(#r-arr-green)"/>
+
+  <!-- Step 3: Verified Status (Right, x=900) -->
+  <g transform="translate(900, 85)">
+    <rect width="260" height="375" rx="12" fill="#0f121a" stroke="#222838" stroke-width="1.2"/>
+    <rect x="0" y="0" width="260" height="34" rx="12" fill="#141824"/>
+    <text x="14" y="22" class="r-header" fill="#34c759">3. Final State</text>
+
+    <g transform="translate(14, 50)">
+      <rect width="232" height="180" rx="8" fill="#0e1f16" stroke="#1a5436" stroke-width="1.2"/>
+      <circle cx="28" cy="28" r="12" fill="#10b981" fill-opacity="0.2"/>
+      <circle cx="28" cy="28" r="6" fill="#10b981"/>
+      <text x="50" y="32" class="r-node-title" fill="#86efac">Healthy &amp; Synced</text>
+      
+      <text x="14" y="66" class="r-code">• 0 Dropped Requests</text>
+      <text x="14" y="86" class="r-code">• 0 In-Flight Errors</text>
+      <text x="14" y="106" class="r-code">• 100% Golden Signals Green</text>
+      <text x="14" y="126" class="r-code">• Telemetry Uninterrupted</text>
+      <text x="14" y="146" class="r-code">• Activity Rings Continuous</text>
+      <text x="14" y="166" class="r-code">• Git SHA Audit Verified</text>
+    </g>
+
+    <g transform="translate(14, 245)">
+      <rect width="232" height="100" rx="8" fill="url(#rollCard)" stroke="#272e40" stroke-width="1"/>
+      <text x="12" y="22" class="r-node-title">Auto-Rollback Guard</text>
+      <text x="12" y="42" class="r-code">If New Pod fails readiness:</text>
+      <text x="12" y="60" class="r-code">• Old Pod never killed</text>
+      <text x="12" y="78" class="r-code">• Rollout halts safely</text>
+      <text x="12" y="96" class="r-code">• Instant rollback to stable</text>
+    </g>
+  </g>
+</svg>

@@ -90,34 +90,7 @@ If you're new to cloud-native delivery, let's break down the three tools using p
 
 Understanding this architectural distinction is the single most common question in Senior DevOps interviews.
 
-```mermaid
-flowchart TD
-    subgraph PushModel["Legacy Push Architecture (High Security Risk)"]
-        Dev1["Developer Commit"] --> CI1["Jenkins CI Server"]
-        CI1 -->|"kubectl apply<br/><b>Needs Admin Kubeconfig!</b><br/>Inbound firewall holes required"| EKS1["AWS EKS Private Cluster<br/>(Cluster Admin Exposed)"]
-    end
-
-    subgraph PullModel["Modern SimianX GitOps Pull Architecture (Zero-Trust)"]
-        Dev2["Developer Commit"] --> CI2["Jenkins CI Server<br/>(Trivy + ECR + S3)"]
-        CI2 -->|"git commit new image tag<br/><b>No cluster access required!</b>"| GitRepo["Git Repository<br/>(Helm Manifests)"]
-        
-        subgraph EKS2["AWS EKS Cluster (Strict Private Subnet)"]
-            Argo["ArgoCD GitOps Controller<br/>• Outbound poll to Git<br/>• Zero open inbound ports"]
-            LiveCluster["Live Pod Fleet & Services<br/>• Auto-healing & Drift Reversion"]
-            Argo -->|Reconcile & Apply| LiveCluster
-        end
-        
-        GitRepo -.->|Polls every 3m / webhook| Argo
-    end
-
-    classDef legacy fill:#fff1f2,stroke:#f43f5e,stroke-width:1.5px,color:#9f1239;
-    classDef modern fill:#ecfdf5,stroke:#10b981,stroke-width:1.5px,color:#065f46;
-    classDef git fill:#eff6ff,stroke:#3b82f6,stroke-width:1.5px,color:#1e40af;
-
-    class PushModel,Dev1,CI1,EKS1 legacy;
-    class PullModel,EKS2,LiveCluster modern;
-    class Dev2,CI2,GitRepo,Argo git;
-```
+![SimianX Push vs Pull GitOps Architecture](screenshots/simianx_push_vs_pull_gitops.svg)
 
 | Feature | Legacy Push Model (Pure Jenkins) | GitOps Pull Model (Jenkins + ArgoCD) |
 | :--- | :--- | :--- |
@@ -131,45 +104,7 @@ flowchart TD
 
 ## 4. Chapter 3: The Complete SimianX End-to-End Delivery Flow
 
-```mermaid
-flowchart TD
-    subgraph Step1["1. Developer & PR Gatekeeper"]
-        DevCode["Code Commit & Pull Request"] --> GHA["GitHub Actions Runner"]
-        GHA -->|Parallel Checks| GHA_Checks["• Pytest & Coverage (22 tests)<br/>• Ruff Python Linter<br/>• Frontend Vite Build Check<br/>• Helm & Terraform Template Lint"]
-        GHA_Checks --> PR_Merge["PR Approved & Merged to 'main'"]
-    end
-
-    subgraph Step2["2. Enterprise CI Pipeline (Jenkins)"]
-        PR_Merge --> Jenkins["Jenkins Declarative Pipeline<br/>(Parameter: DEPLOY_ENV = dev | prod)"]
-        Jenkins --> Trivy["Trivy Vulnerability Scan<br/>(Block High/Critical CVEs)"]
-        Trivy --> BuildDocker["Build Immutable Docker Image<br/><code>simianx-backend-dev:tag</code>"]
-        BuildDocker --> PushECR["Push to AWS ECR Registry"]
-        PushECR --> SyncCDN["Deploy Frontend to S3 +<br/>CloudFront Cache Invalidation"]
-        SyncCDN --> GitCommit["GitOps Auto-Commit:<br/>Update tag in <code>helm/simianx/values-dev.yaml</code><br/><code>[skip ci]</code> commit pushed to Git"]
-    end
-
-    subgraph Step3["3. In-Cluster GitOps Reconciliation (ArgoCD)"]
-        GitCommit --> ArgoDetect["ArgoCD Controller Detects Commit SHA<br/>Status: <code>OutOfSync</code>"]
-        ArgoDetect --> Rollout["Zero-Downtime Rolling Update"]
-        
-        subgraph K8sRollout["Kubernetes Cluster (ap-south-1)"]
-            Rollout --> NewPod["Spawn New Pod with New Image"]
-            NewPod --> Probe["Readiness Probe: GET /health == 200 OK"]
-            Probe --> Shift["ALB Routes Traffic to New Pod"]
-            Shift --> Terminate["Terminate Old Pod (30s Grace Period)"]
-        end
-    end
-
-    classDef dev fill:#f8fafc,stroke:#94a3b8,stroke-width:1.5px,color:#0f172a;
-    classDef ci fill:#eff6ff,stroke:#3b82f6,stroke-width:1.5px,color:#1e40af;
-    classDef cd fill:#ecfdf5,stroke:#10b981,stroke-width:1.5px,color:#065f46;
-    classDef k8s fill:#faf5ff,stroke:#a855f7,stroke-width:1.5px,color:#581c87;
-
-    class Step1,DevCode,GHA,GHA_Checks,PR_Merge dev;
-    class Step2,Jenkins,Trivy,BuildDocker,PushECR,SyncCDN,GitCommit ci;
-    class Step3,ArgoDetect,Rollout cd;
-    class K8sRollout,NewPod,Probe,Shift,Terminate k8s;
-```
+![SimianX 5-Pipeline Modular Delivery Flow](screenshots/simianx_gitops_pipeline.svg)
 
 ---
 

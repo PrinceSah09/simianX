@@ -11,44 +11,7 @@ In production microservice commerce platforms, users interact with both **static
 
 SimianX implements **Multi-Origin CloudFront Routing protected by AWS WAFv2**:
 
-```mermaid
-flowchart TD
-    Client["Client Web Browser<br/>(Global Internet)"]
-    
-    subgraph EdgeLayer ["AWS Global Edge Network (CloudFront Edge POPs)"]
-        WAF["AWS WAFv2 Web ACL<br/>(Scope: CLOUDFRONT in us-east-1)<br/>• CommonRuleSet (OWASP Top 10)<br/>• KnownBadInputs (RCE, Log4j)<br/>• AmazonIpReputationList<br/>• AnonymousIpList (Tor, Proxies)<br/>• SQLiRuleSet<br/>• RateLimitPerIP (1,000 req / 5 min)"]
-        CF["CloudFront Global CDN<br/>(d187dv15yxfrzi.cloudfront.net)"]
-        WAF -->|Evaluate & Allow| CF
-        WAF -.->|Block Pattern| WAFBlock["HTTP 403 Forbidden<br/>(WAF Edge Block)"]
-    end
-
-    subgraph StorageLayer ["AWS Storage Layer (ap-south-1)"]
-        S3[("Amazon S3 Private Bucket<br/>(simianx-frontend-dev-...)<br/>• 100% Private (Block Public Access)<br/>• SigV4 Origin Access Control (OAC)<br/>• AES-256 Server-Side Encryption")]
-    end
-
-    subgraph ComputeLayer ["AWS VPC & EKS Compute (ap-south-1)"]
-        ALB["AWS Application Load Balancer<br/>(k8s-simianxdev-...elb.amazonaws.com)<br/>• Public Subnets<br/>• Managed by AWS Load Balancer Controller"]
-        EKSNode1["EKS Worker Node 1 (t3.micro)<br/>(simianx-backend Pod :8000)"]
-        EKSNode2["EKS Worker Node 2 (t3.micro)<br/>(aws-load-balancer-controller)"]
-    end
-
-    Client -->|HTTPS (TLS 1.2/1.3)| WAF
-    CF -->|GET /* (Static UI & Assets)| S3
-    CF -->|ANY /api/* (Dynamic Proxy)| ALB
-    ALB -->|Forward TargetGroup| EKSNode1
-
-    classDef client fill:#f8fafc,stroke:#94a3b8,stroke-width:1.5px,color:#0f172a;
-    classDef edge fill:#eff6ff,stroke:#3b82f6,stroke-width:1.5px,color:#1e40af;
-    classDef storage fill:#fef3c7,stroke:#f59e0b,stroke-width:1.5px,color:#92400e;
-    classDef compute fill:#ecfdf5,stroke:#10b981,stroke-width:1.5px,color:#065f46;
-    classDef block fill:#fff1f2,stroke:#f43f5e,stroke-width:1.5px,color:#9f1239;
-
-    class Client client;
-    class EdgeLayer,WAF,CF edge;
-    class WAFBlock block;
-    class StorageLayer,S3 storage;
-    class ComputeLayer,ALB,EKSNode1,EKSNode2 compute;
-```
+![SimianX Edge Security & Multi-Origin CloudFront WAF Architecture](screenshots/simianx_edge_waf_architecture.svg)
 
 ---
 

@@ -1,0 +1,144 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 640" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgPVP" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0a0c12"/>
+      <stop offset="100%" stop-color="#111420"/>
+    </linearGradient>
+    <linearGradient id="badGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#241418"/>
+      <stop offset="100%" stop-color="#180e12"/>
+    </linearGradient>
+    <linearGradient id="goodGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0f241c"/>
+      <stop offset="100%" stop-color="#0b1813"/>
+    </linearGradient>
+    <linearGradient id="pvpCard" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#181c28"/>
+      <stop offset="100%" stop-color="#121520"/>
+    </linearGradient>
+
+    <marker id="pvp-red" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#f43f5e"/>
+    </marker>
+    <marker id="pvp-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#10b981"/>
+    </marker>
+  </defs>
+
+  <style>
+    .pvp-title { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif; font-size: 21px; font-weight: 700; fill: #f8fafc; }
+    .pvp-sub { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif; font-size: 12px; fill: #64748b; }
+    .pvp-header { font-family: -apple-system, BlinkMacSystemFont, sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; }
+    .pvp-node-title { font-family: -apple-system, BlinkMacSystemFont, sans-serif; font-size: 13px; font-weight: 600; fill: #f1f5f9; }
+    .pvp-desc { font-family: -apple-system, BlinkMacSystemFont, sans-serif; font-size: 11px; fill: #94a3b8; }
+    .pvp-code { font-family: "SF Mono", monospace; font-size: 10.5px; fill: #cbd5e1; }
+    .pvp-badge { font-family: -apple-system, BlinkMacSystemFont, sans-serif; font-size: 9.5px; font-weight: 700; }
+  </style>
+
+  <rect width="1200" height="640" rx="16" fill="url(#bgPVP)"/>
+  <rect x="1" y="1" width="1198" height="638" rx="15" fill="none" stroke="#1f2433" stroke-width="1.5"/>
+
+  <!-- Top Title -->
+  <g transform="translate(40, 36)">
+    <text x="0" y="17" class="pvp-title">GitOps Architectural Evolution: Legacy Push Model vs Zero-Trust Pull Model</text>
+    <text x="0" y="36" class="pvp-sub">Eliminating Cluster Admin Credential Exposure and Inbound Firewall Holes in Kubernetes Production Deployments</text>
+  </g>
+
+  <!-- COLUMN 1: LEGACY PUSH MODEL (LEFT) -->
+  <g transform="translate(40, 85)">
+    <rect width="530" height="515" rx="14" fill="url(#badGrad)" stroke="#521d27" stroke-width="1.5"/>
+    <rect x="0" y="0" width="530" height="40" rx="14" fill="#2d1319"/>
+    <circle cx="20" cy="20" r="5" fill="#f43f5e"/>
+    <text x="34" y="24" class="pvp-header" fill="#fb7185">Legacy Push Model (High Security Risk)</text>
+    <text x="400" y="25" class="pvp-badge" fill="#f43f5e">NOT RECOMMENDED</text>
+
+    <!-- Developer Commit -->
+    <g transform="translate(24, 60)">
+      <rect width="482" height="60" rx="8" fill="url(#pvpCard)" stroke="#3a1b24" stroke-width="1"/>
+      <text x="16" y="24" class="pvp-node-title">1. Developer Pushes Code Commit</text>
+      <text x="16" y="42" class="pvp-desc">Direct commit or PR merge triggers external CI</text>
+    </g>
+
+    <!-- External CI Server (Jenkins / GitLab) -->
+    <g transform="translate(24, 150)">
+      <rect width="482" height="100" rx="8" fill="url(#pvpCard)" stroke="#521d27" stroke-width="1.2"/>
+      <rect x="0" y="0" width="4" height="100" rx="2" fill="#f43f5e"/>
+      <text x="16" y="24" class="pvp-node-title">2. External CI Server (e.g. Jenkins Runner)</text>
+      <text x="16" y="44" class="pvp-code">• Holds HIGHLY SENSITIVE cluster admin kubeconfig</text>
+      <text x="16" y="60" class="pvp-code">• Runs `kubectl apply` directly into cluster</text>
+      <text x="16" y="78" class="pvp-code">• If CI runner is compromised → ENTIRE CLUSTER COMPROMISED</text>
+      <text x="360" y="24" class="pvp-badge" fill="#fb7185">CREDENTIAL RISK</text>
+    </g>
+
+    <!-- Inbound Firewall Hole Arrow -->
+    <path d="M 265 250 L 265 315" stroke="#f43f5e" stroke-width="2" marker-end="url(#pvp-red)"/>
+    <rect x="155" y="272" width="220" height="22" rx="4" fill="#301117" stroke="#661f2b" stroke-width="1"/>
+    <text x="163" y="287" class="pvp-code" fill="#fca5a5">Inbound Firewall Port 6443 Open</text>
+
+    <!-- Exposed Kubernetes Cluster -->
+    <g transform="translate(24, 315)">
+      <rect width="482" height="110" rx="8" fill="url(#pvpCard)" stroke="#521d27" stroke-width="1"/>
+      <text x="16" y="24" class="pvp-node-title">3. Target Kubernetes Cluster</text>
+      <text x="16" y="44" class="pvp-code">• Inbound firewall hole required from external CI IP</text>
+      <text x="16" y="60" class="pvp-code">• Manual kubectl changes cause silent configuration drift</text>
+      <text x="16" y="76" class="pvp-code">• Zero auditability of who applied what ad-hoc changes</text>
+      <text x="16" y="92" class="pvp-code">• CI has no auto-healing when pods or manifests drift</text>
+    </g>
+
+    <!-- Bottom Vulnerability Box -->
+    <g transform="translate(24, 442)">
+      <rect width="482" height="50" rx="8" fill="#1f0f13" stroke="#481822" stroke-width="1"/>
+      <text x="16" y="22" class="pvp-code" fill="#f43f5e">CRITICAL VULNERABILITY: Lateral attack vector</text>
+      <text x="16" y="38" class="pvp-desc">Compromising a single CI build job yields root access to production workloads.</text>
+    </g>
+  </g>
+
+  <!-- COLUMN 2: SIMIANX MODERN GITOPS PULL MODEL (RIGHT) -->
+  <g transform="translate(630, 85)">
+    <rect width="530" height="515" rx="14" fill="url(#goodGrad)" stroke="#1a5338" stroke-width="1.5"/>
+    <rect x="0" y="0" width="530" height="40" rx="14" fill="#0f2b1d"/>
+    <circle cx="20" cy="20" r="5" fill="#10b981"/>
+    <text x="34" y="24" class="pvp-header" fill="#34c759">SimianX GitOps Pull Model (Zero-Trust)</text>
+    <text x="400" y="25" class="pvp-badge" fill="#34c759">ENTERPRISE GOLD</text>
+
+    <!-- Step 1: Git Manifest Repo -->
+    <g transform="translate(24, 60)">
+      <rect width="482" height="64" rx="8" fill="url(#pvpCard)" stroke="#1a5338" stroke-width="1"/>
+      <text x="16" y="24" class="pvp-node-title">1. Git Repository (Single Source of Truth)</text>
+      <text x="16" y="44" class="pvp-code">• Helm values-dev.yaml / values-prod.yaml</text>
+      <text x="360" y="24" class="pvp-badge" fill="#34c759">AUDIT LOG</text>
+    </g>
+
+    <!-- Step 2: External CI Only Updates Git -->
+    <g transform="translate(24, 146)">
+      <rect width="482" height="80" rx="8" fill="url(#pvpCard)" stroke="#1a5338" stroke-width="1.2"/>
+      <rect x="0" y="0" width="4" height="80" rx="2" fill="#10b981"/>
+      <text x="16" y="24" class="pvp-node-title">2. Jenkins CI Server (Zero Cluster Secrets)</text>
+      <text x="16" y="44" class="pvp-code">• Trivy CVE Scan + Docker Build &amp; Push to AWS ECR</text>
+      <text x="16" y="60" class="pvp-code">• ONLY has write access to Git repository (updates image tag)</text>
+      <text x="330" y="24" class="pvp-badge" fill="#34c759">NO KUBECONFIG</text>
+    </g>
+
+    <!-- Outbound Pull Arrow -->
+    <path d="M 265 315 L 265 240" stroke="#10b981" stroke-width="2" stroke-dasharray="4,4" marker-end="url(#pvp-green)"/>
+    <rect x="145" y="265" width="240" height="22" rx="4" fill="#0c1f17" stroke="#1a5338" stroke-width="1"/>
+    <text x="153" y="280" class="pvp-code" fill="#6ee7b7">Outbound Polling (Zero Inbound Ports)</text>
+
+    <!-- Step 3: In-Cluster ArgoCD Controller -->
+    <g transform="translate(24, 315)">
+      <rect width="482" height="110" rx="8" fill="url(#pvpCard)" stroke="#1a5338" stroke-width="1"/>
+      <text x="16" y="24" class="pvp-node-title">3. ArgoCD Controller (Runs INSIDE Private EKS)</text>
+      <text x="16" y="44" class="pvp-code">• 100% Private EKS Cluster: ZERO inbound firewall holes</text>
+      <text x="16" y="60" class="pvp-code">• Controller pulls state outward from Git over HTTPS</text>
+      <text x="16" y="76" class="pvp-code">• Automated Drift Detection: reverts unauthorized manual kubectl changes</text>
+      <text x="16" y="92" class="pvp-code">• Uses short-lived In-Cluster ServiceAccount tokens</text>
+    </g>
+
+    <!-- Bottom Security Benefits Box -->
+    <g transform="translate(24, 442)">
+      <rect width="482" height="50" rx="8" fill="#0a1a12" stroke="#1a5338" stroke-width="1"/>
+      <text x="16" y="22" class="pvp-code" fill="#34c759">ZERO-TRUST SECURITY: Complete blast-radius isolation</text>
+      <text x="16" y="38" class="pvp-desc">Even if Jenkins runner is fully compromised, attacker CANNOT compromise EKS.</text>
+    </g>
+  </g>
+</svg>

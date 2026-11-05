@@ -47,51 +47,7 @@
 
 ## 2. Chapter 1: The Multi-Pipeline Architecture Overview
 
-```mermaid
-flowchart TD
-    Commit["Developer Git Commit & Push"]
-
-    subgraph IaCPipeline["Pipeline 2: Infrastructure as Code (Terraform)"]
-        TfDetect["Path Filter: <code>terraform/**</code>"] --> TfPlan["Terraform Plan on PR<br/>• Lint & Validate<br/>• Post Plan Summary to PR"]
-        TfPlan --> TfApply["Terraform Apply on Merge<br/>• S3 Remote State Locking<br/>• Multi-AZ VPC, EKS, ALB, WAF"]
-    end
-
-    subgraph AppPipeline["Pipeline 1: PR Gatekeeper (GitHub Actions)"]
-        AppDetect["Path Filter: <code>backend/**</code>, <code>frontend/**</code>"] --> Tests["Quality Gates<br/>• Pytest & Coverage (22 tests)<br/>• Ruff Linter<br/>• Frontend Vite Build Check<br/>• Helm Template Lint"]
-        Tests --> PRMerged["PR Approved & Merged to 'main'"]
-    end
-
-    subgraph CIPipeline["Pipeline 3: Enterprise Release (Jenkins CI)"]
-        PRMerged --> Scan["Trivy Vulnerability Scan<br/>(Block High/Critical CVEs)"]
-        Scan --> BuildBE["Build Immutable Docker Image<br/><code>simianx-backend-dev:tag</code>"]
-        BuildBE --> PushECR["Push Image to AWS ECR"]
-    end
-
-    subgraph EdgePipeline["Pipeline 4: Serverless Edge (CloudFront CDN)"]
-        PushECR --> S3Sync["Sync Static <code>dist/</code> to S3"]
-        S3Sync --> CFInvalidate["CloudFront Cache Invalidation<br/>• Instant Global Edge Flush<br/>• Zero CORS / Single Domain"]
-    end
-
-    subgraph GitOpsPipeline["Pipeline 5: GitOps In-Cluster (ArgoCD)"]
-        PushECR --> AutoCommit["Auto-Commit New Image Tag<br/>to <code>helm/simianx/values-dev.yaml</code>"]
-        AutoCommit --> ArgoReconcile["ArgoCD In-Cluster Controller<br/>• Detects Commit SHA<br/>• Zero-Downtime Rolling Update<br/>• Self-Healing & Drift Rectification"]
-    end
-
-    Commit --> TfDetect
-    Commit --> AppDetect
-
-    classDef dev fill:#f8fafc,stroke:#94a3b8,stroke-width:1.5px,color:#0f172a;
-    classDef tf fill:#faf5ff,stroke:#a855f7,stroke-width:1.5px,color:#6b21a8;
-    classDef ci fill:#eff6ff,stroke:#3b82f6,stroke-width:1.5px,color:#1e40af;
-    classDef edge fill:#fef3c7,stroke:#f59e0b,stroke-width:1.5px,color:#92400e;
-    classDef cd fill:#ecfdf5,stroke:#10b981,stroke-width:1.5px,color:#065f46;
-
-    class AppPipeline,AppDetect,Tests,PRMerged dev;
-    class IaCPipeline,TfDetect,TfPlan,TfApply tf;
-    class CIPipeline,Scan,BuildBE,PushECR ci;
-    class EdgePipeline,S3Sync,CFInvalidate edge;
-    class GitOpsPipeline,AutoCommit,ArgoReconcile cd;
-```
+![SimianX 5-Pipeline Modular Delivery Flow](screenshots/simianx_gitops_pipeline.svg)
 
 ---
 
@@ -119,7 +75,7 @@ Many junior engineers build a single giant script that does everything: formats 
    ```bash
    cd backend && pip install -r requirements-dev.txt
    ruff check app/ tests/          # Enforces PEP 8 and static security rules
-   pytest tests/ -v --cov=app      # Executes all 22 unit & integration tests
+   pytest tests/ -v --cov=app      # Executes all 35 unit & integration tests
    ```
 2. **Frontend Quality Gate:**
    ```bash
@@ -213,34 +169,7 @@ aws cloudfront create-invalidation --distribution-id $DIST_ID --paths "/*"
 
 * **Configuration Files:** [`argocd/application-dev.yaml`](file:///Users/princekumar/Desktop/Scalekart/argocd/application-dev.yaml) & [`argocd/application-prod.yaml`](file:///Users/princekumar/Desktop/Scalekart/argocd/application-prod.yaml)
 
-```mermaid
-flowchart TD
-    GitCommit["Git Commit Pushed by Jenkins<br/><code>tag: dev-42-a1b2c3d</code>"] --> ArgoPoll["ArgoCD Repo Server Polls Git<br/>Status: <code>OutOfSync</code>"]
-
-    subgraph RolloutStage["Kubernetes Zero-Downtime Rolling Update"]
-        Spawn["1. Spawns New Pod<br/>(image: dev-42-a1b2c3d)"]
-        Probe["2. Waits for Readiness Probe<br/>GET /health returns 200 OK"]
-        Pool["3. AWS ALB adds New Pod<br/>to Active Ingress Pool"]
-        Sigterm["4. Sends SIGTERM to Old Pod<br/>(30s connection draining grace period)"]
-        Term["5. Old Pod terminates cleanly<br/>Zero In-Flight Drops"]
-        
-        Spawn --> Probe
-        Probe --> Pool
-        Pool --> Sigterm
-        Sigterm --> Term
-    end
-
-    ArgoPoll --> Spawn
-    Term --> Healthy["Application Status: <b>Healthy (Synced)</b>"]
-
-    classDef trigger fill:#eff6ff,stroke:#3b82f6,stroke-width:1.5px,color:#1e40af;
-    classDef rollout fill:#f0fdf4,stroke:#22c55e,stroke-width:1.5px,color:#166534;
-    classDef done fill:#ecfdf5,stroke:#059669,stroke-width:2px,color:#065f46;
-
-    class GitCommit,ArgoPoll trigger;
-    class RolloutStage,Spawn,Probe,Pool,Sigterm,Term rollout;
-    class Healthy done;
-```
+![SimianX Zero-Downtime Rolling Update Architecture](screenshots/simianx_rolling_update_flow.svg)
 
 ---
 

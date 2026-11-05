@@ -25,7 +25,7 @@
    - [Error Rate & Fleet Availability](#3-error-rate--fleet-availability)
 6. [Chapter 5: Chaos Engineering & Traffic Burst Simulator](#6-chapter-5-chaos-engineering--traffic-burst-simulator)
 7. [Chapter 6: Infrastructure Observability (Memory RSS, Disk, FDs, Scaler)](#7-chapter-6-infrastructure-observability)
-8. [Chapter 7: The Top 15 SRE Interview Questions & Witty Answers](#8-chapter-7-the-top-15-sre-interview-questions--witty-answers)
+8. [Chapter 7: The Top 22 SRE & DevOps Interview Questions & Master Answers](#8-chapter-7-the-top-22-sre--devops-interview-questions--master-answers)
 9. [Chapter 8: Hands-On Demo CLI Runbook](#9-chapter-8-hands-on-demo-cli-runbook)
 
 ---
@@ -109,7 +109,11 @@ If you're completely new to cloud-native systems, let's break down each piece us
 
 ## 3. Chapter 2: The SimianX Architecture & Data Journey
 
-Here is the exact blueprint of how all components interact:
+Here is the exact blueprint of how all components interact across CloudFront Edge, AWS EKS, Jenkins CI, and ArgoCD:
+
+![SimianX System Architecture](screenshots/simianx_system_architecture.svg)
+
+### The Runtime Sequence & Telemetry Polling Flow
 
 ```mermaid
 sequenceDiagram
@@ -141,81 +145,9 @@ sequenceDiagram
 
 ### The End-to-End Observability Pipeline (OTel, Prometheus & Logs)
 
-The following diagram maps out how incoming traffic (normal client traffic or chaos experiments) is ingested, traced with OpenTelemetry, collected into histogram buckets, and streamed to the frontend:
+The following sleek architectural map details how incoming traffic (normal client traffic or chaos experiments) is ingested, traced with OpenTelemetry, collected into histogram buckets, and streamed to the frontend:
 
-```mermaid
-flowchart TD
-    subgraph Client["Traffic Sources"]
-        User["Browser / HTTP Client"]
-        Chaos["Chaos Workload Generator<br/>• Traffic Burst (10-50 RPS)<br/>• Cascading 5xx Faults<br/>• Gaussian Tail Latencies"]
-    end
-
-    subgraph FastAPI["SimianX Backend Core (:8000)"]
-        Middleware["record_telemetry_middleware<br/>• High-precision time.perf_counter()<br/>• Injects X-Trace-Id header<br/>• Filters admin/polling noise"]
-        
-        subgraph OTelSub["OpenTelemetry (OTel) SDK"]
-            FastAPIInst["FastAPIInstrumentor<br/>(Server Root Spans)"]
-            HTTPXInst["HTTPXClientInstrumentor<br/>(Client Child Spans)"]
-            Tracer["TracerProvider<br/>Resource: simianx-backend, k8s.pod"]
-            
-            subgraph DualExporters["Dual Span Processors"]
-                BatchProc["BatchSpanProcessor<br/>→ OTLPSpanExporter (Proto/HTTP)<br/>(External Grafana Alloy / Tempo)"]
-                SimpleProc["SimpleSpanProcessor<br/>→ BufferSpanExporter<br/>(In-Memory Ring Buffer: 200 traces)"]
-            end
-        end
-
-        subgraph MetricsSub["Metrics Engine"]
-            MemCollector["MetricsCollector (In-Memory)<br/>• 10s Rolling Sliding Window<br/>• P50 / P90 / P95 / P99 Quantiles<br/>• Error Rate & Availability"]
-            PromExporter["record_prometheus_request()<br/>• simianx_http_requests_total<br/>• simianx_http_request_duration_seconds"]
-        end
-
-        subgraph LogsSub["Live Logs Engine"]
-            LogBuffer["append_request_log()<br/>• Microsecond timestamps<br/>• Correlated tr-xxx Trace ID<br/>• Status & Chaos annotations"]
-        end
-    end
-
-    subgraph Cluster["Kubernetes Infrastructure"]
-        Prometheus["Prometheus Server (:9090)<br/>• role: pod dynamic discovery<br/>• Scrapes GET /metrics every 2s"]
-    end
-
-    subgraph UI["SimianX Frontend Cockpit (:3000)"]
-        Rings["Apple Activity Rings<br/>(RPS, Latency Headroom, Availability)"]
-        TracesUI["Trace Waterfall Viewer<br/>(Parent-Child Spans, Offsets, Timeline)"]
-        Console["Live Terminal Console<br/>(200 OK, 5xx Chaos Badges, Trace Chips)"]
-    end
-
-    User --> Middleware
-    Chaos --> Middleware
-    Middleware --> FastAPIInst
-    FastAPIInst --> Tracer
-    Tracer --> BatchProc
-    Tracer --> SimpleProc
-    Middleware --> MemCollector
-    Middleware --> PromExporter
-    Middleware --> LogBuffer
-
-    PromExporter -.->|Scraped by| Prometheus
-    Prometheus -.->|PromQL Queries| PromClient["PrometheusClient Service<br/>(Resilient Fallback)"]
-    PromClient --> Rings
-    SimpleProc --> TracesUI
-    LogBuffer --> Console
-
-    classDef client fill:#f8fafc,stroke:#94a3b8,stroke-width:1.5px,color:#0f172a;
-    classDef mw fill:#eff6ff,stroke:#3b82f6,stroke-width:1.5px,color:#1e40af;
-    classDef otel fill:#faf5ff,stroke:#a855f7,stroke-width:1.5px,color:#6b21a8;
-    classDef metrics fill:#f0fdf4,stroke:#22c55e,stroke-width:1.5px,color:#166534;
-    classDef logs fill:#fff7ed,stroke:#f97316,stroke-width:1.5px,color:#9a3412;
-    classDef prom fill:#fef3c7,stroke:#f59e0b,stroke-width:1.5px,color:#92400e;
-    classDef ui fill:#ffffff,stroke:#64748b,stroke-width:1.5px,color:#0f172a;
-
-    class Client,User,Chaos client;
-    class Middleware mw;
-    class OTelSub,FastAPIInst,HTTPXInst,Tracer,DualExporters,BatchProc,SimpleProc otel;
-    class MetricsSub,MemCollector,PromExporter metrics;
-    class LogsSub,LogBuffer logs;
-    class Cluster,Prometheus prom;
-    class UI,Rings,TracesUI,Console,PromClient ui;
-```
+![SimianX Observability Architecture](screenshots/simianx_observability_architecture.png)
 
 ### The Live UI in Action:
 
@@ -233,12 +165,29 @@ Every single file in this repository has a clear architectural responsibility. L
 
 #### 1. [`backend/app/main.py`](file:///Users/princekumar/Desktop/Scalekart/backend/app/main.py)
 
-- **What it does**: Initializes the FastAPI app, configures CORS, mounts API routers (`/api/v1/experiments`, `/api/v1/telemetry`), and initializes Prometheus metric collectors.
+- **What it does**: Initializes the FastAPI app, configures CORS, mounts API routers (`/api/v1/experiments`, `/api/v1/telemetry`, `/api/v1/logs`, `/api/v1/alerts`), and initializes Prometheus metric collectors and OpenTelemetry tracing.
 - **Key Concepts**:
-  - `lifespan(app)`: Context manager running on startup to verify Prometheus connectivity and seed background pollers.
-  - Exposes the `/api/v1/metrics` scrape endpoint that Prometheus queries.
+  - `lifespan(app)`: Async context manager running on startup that spawns a dedicated background `alert_monitor_loop()` evaluating real-time sliding-window telemetry every 3.0 seconds against reliability thresholds.
+  - Exposes the `/metrics` scrape endpoint that Prometheus queries.
 
-#### 2. [`backend/app/services/prometheus_client.py`](file:///Users/princekumar/Desktop/Scalekart/backend/app/services/prometheus_client.py)
+#### 2. [`backend/app/services/slack_alerter.py`](file:///Users/princekumar/Desktop/Scalekart/backend/app/services/slack_alerter.py)
+
+- **What it does**: Production-grade, thread-safe Slack alerting engine for automated incident dispatch and self-healing resolution cards.
+- **Key SRE Architectural Mechanisms**:
+  - **Thread-Safety via `threading.RLock`**: Protects the incident state machine (`_is_firing`, `_active_alert_type`, `_incident_start_time`, `_consecutive_bad_checks`) against race conditions across concurrent asynchronous coroutines.
+  - **Flapping Prevention**: Implements a recovery debounce requiring **2 consecutive healthy checks** before sending an auto-resolution notice to avoid spamming on oscillating metrics.
+  - **Debounce Cooldown**: Enforces a configurable cooldown period (default 60s) between repeated incident notifications.
+  - **Minimalist Block Kit Cards**: Sleek Apple-inspired layouts with color bars (`#ff3b30` Critical Red, `#ff9500` Warning Orange, `#34c759` Resolved Green, `#0071e3` Blue) with clean typography and zero noisy emojis.
+  - **Credential Redaction**: Masks webhook URLs (`https://hooks.slack.com/***REDACTED***`) when returning status to the frontend.
+
+#### 3. [`backend/app/api/routes/alerts.py`](file:///Users/princekumar/Desktop/Scalekart/backend/app/api/routes/alerts.py)
+
+- **What it does**: REST control plane for Slack alerting:
+  - `GET /api/v1/alerts/status`: Returns current firing state, masked webhook URL, thresholds, and recent alert history.
+  - `POST /api/v1/alerts/config`: Updates thresholds (`error_threshold_pct`, `latency_threshold_ms`, `cooldown_seconds`) and webhook URL dynamically at runtime without restarting pods.
+  - `POST /api/v1/alerts/test`: Dispatches a formatted test notification card to verify end-to-end webhook connectivity.
+
+#### 4. [`backend/app/services/prometheus_client.py`](file:///Users/princekumar/Desktop/Scalekart/backend/app/services/prometheus_client.py)
 
 - **What it does**: The async client that speaks directly to the Prometheus server HTTP API (`http://prometheus:9090/api/v1/query`).
 - **Resilience Pattern**:
@@ -253,7 +202,7 @@ Every single file in this repository has a clear architectural responsibility. L
   ```
   If Prometheus is temporarily restarting, the UI stays fully functional!
 
-#### 3. [`backend/app/services/experiment.py`](file:///Users/princekumar/Desktop/Scalekart/backend/app/services/experiment.py)
+#### 5. [`backend/app/services/experiment.py`](file:///Users/princekumar/Desktop/Scalekart/backend/app/services/experiment.py)
 
 - **What it does**: The chaos traffic engine.
 - **Concurrency Mechanic**:
@@ -296,7 +245,16 @@ Every single file in this repository has a clear architectural responsibility. L
 
 #### 3. [`helm/simianx/templates/backend-service.yaml`](file:///Users/princekumar/Desktop/Scalekart/helm/simianx/templates/backend-service.yaml)
 
-- **What it does**: Creates a stable virtual IP (`simianx-backend.simianx.svc.cluster.local:8000`) that forwards incoming traffic across all healthy backend pods using round-robin / probabilistic load balancing.
+- **What it does**: Creates a stable virtual IP (`simianx-backend.simianx.svc.cluster.local:8000`) that forwards incoming traffic across all healthy backend pods.
+- **Session Affinity (Sticky Sessions)**:
+  ```yaml
+  spec:
+    sessionAffinity: ClientIP
+    sessionAffinityConfig:
+      clientIP:
+        timeoutSeconds: 10800 # 3 hours
+  ```
+  **Why this matters in SRE interviews**: By default, Kubernetes Service uses random/round-robin iptables rules. During an asynchronous chaos experiment where in-memory state is recorded on the specific executing pod, round-robin polling from the browser causes intermittent 404 responses whenever a poll hits a peer replica. `ClientIP` session affinity ensures an operator's browser sticks to the same pod instance throughout the scenario lifecycle.
 
 #### 4. [`helm/simianx/templates/prometheus-configmap.yaml`](file:///Users/princekumar/Desktop/Scalekart/helm/simianx/templates/prometheus-configmap.yaml)
 
@@ -311,29 +269,41 @@ Every single file in this repository has a clear architectural responsibility. L
 #### 1. [`frontend/src/components/TelemetryGauges.tsx`](file:///Users/princekumar/Desktop/Scalekart/frontend/src/components/TelemetryGauges.tsx)
 
 - **Apple Fitness Activity Rings Math**:
-  - Three concentric SVG circles centered at $(cx=100, cy=100)$:
-    - Outer Ring ($r=68$, $C=427.26\text{px}$): **Availability SLA** (Emerald `#34c759`)
-    - Middle Ring ($r=54$, $C=339.29\text{px}$): **Throughput Headroom** (Blue `#0071e3`)
-    - Inner Ring ($r=40$, $C=251.33\text{px}$): **Latency Budget** (Indigo `#5e5ce6`)
+  - Three concentric SVG circles with `stroke=15` and `gap=7`:
+    - Outer Ring: **Availability SLA** (Emerald `#30d158`)
+    - Middle Ring: **Throughput Headroom** (Blue `#0071e3`)
+    - Inner Ring: **Latency Budget** (Indigo `#5e5ce6`)
   - Progress is calculated dynamically using SVG stroke offsets:
     $$\text{strokeDashoffset} = C \times (1 - \text{progress})$$
   - Offloaded to the browser GPU compositor with a custom Apple ease curve:
     `transition: stroke-dashoffset 0.8s cubic-bezier(0.16, 1, 0.3, 1)`
-  - Clean center display: pure Apple Fitness typographic layout with `38px` bold number and `req/s` label with zero overlapping pill badges.
+  - **Typographic Balance & Geometry**: Center readout calibrated at `28px` bold with `11px` `req/s` sub-label inside a `92px` inner diameter circle, guaranteeing generous 20px+ radial margin that never crowds or touches the purple ring.
 
 - **Four Minimalist Golden Signal Gauges**:
-  - Circular progress arcs for Throughput, P95 Latency, Error Rate, and Cluster Availability with optimal baseline callouts.
+  - **Throughput**: Real-time RPS with adaptive scaling.
+  - **P95 Latency**: Measured tail latency with P50/P99 baseline context.
+  - **Error Rate**: True percentage gauge calibrated with `max={100}` so that a 34.3% error surge fills exactly ~34% of the arc (less than half) and only closes to a full 360° circle at a complete 100% outage.
+  - **Availability**: Cluster uptime percentage.
 
-#### 2. [`frontend/src/index.css`](file:///Users/princekumar/Desktop/Scalekart/frontend/src/index.css) (Layout Stability & Dark Terminal Scroll)
+#### 2. [`frontend/src/components/Navbar.tsx`](file:///Users/princekumar/Desktop/Scalekart/frontend/src/components/Navbar.tsx)
+
+- **Symmetrical 3-Column Layout**: Left brand (`flex-1 justify-start`), Center nav (`shrink-0`), and Right actions (`flex-1 justify-end`). Guarantees the navigation tabs are mathematically locked at the exact 50% midpoint of the container.
+- **Zero-Shift Tab Styling**: Uniform `font-medium` across both active and inactive states with text contrast (`text-[#1d1d1f]` vs `text-[#1d1d1f]/60`) and an Apple active indicator line, preventing subpixel font-weight jitter on tab switch.
+
+#### 3. [`frontend/src/components/SlackAlertModal.tsx`](file:///Users/princekumar/Desktop/Scalekart/frontend/src/components/SlackAlertModal.tsx)
+
+- Compact 440px Apple sheet modal dialog with live connectivity pill indicator, webhook URL masking, instant test alert dispatch with animated spinner, and seamless dismissal.
+
+#### 4. [`frontend/src/index.css`](file:///Users/princekumar/Desktop/Scalekart/frontend/src/index.css) (Layout Stability & Dark Terminal Scroll)
 
 - **Zero Layout Shift**:
   ```css
   html {
-    overflow-y: scroll !important;
-    scrollbar-gutter: stable !important;
+    overflow-y: scroll;
+    scrollbar-gutter: stable;
   }
   ```
-  Forces the browser to permanently reserve the vertical scrollbar track, eliminating jumps when switching between views.
+  Forces the browser to permanently reserve the vertical scrollbar track across both short (e.g. History) and tall (Studio) views, eliminating horizontal layout jumps.
 - **Dark Terminal Scrollbar**:
   ```css
   .dark-terminal-scroll::-webkit-scrollbar-thumb {
@@ -343,7 +313,7 @@ Every single file in this repository has a clear architectural responsibility. L
   ```
   Guarantees high-contrast, dark-mode terminal scrolling without horizontal overflow artifacts.
 
-#### 3. [`frontend/src/components/ExperimentPanel.tsx`](file:///Users/princekumar/Desktop/Scalekart/frontend/src/components/ExperimentPanel.tsx) (Scenario Launcher)
+#### 5. [`frontend/src/components/ExperimentPanel.tsx`](file:///Users/princekumar/Desktop/Scalekart/frontend/src/components/ExperimentPanel.tsx) (Scenario Launcher)
 
 - Intuitive card-based scenario selector allowing instant execution of real fault injections:
   - **Traffic Burst**: 10 to 50 RPS surge.
@@ -477,7 +447,7 @@ The inspection popover displays:
 
 ---
 
-## 8. Chapter 7: The Top 15 SRE Interview Questions & Witty Answers
+## 8. Chapter 7: The Top 22 SRE & DevOps Interview Questions & Master Answers
 
 ### Q1: "What is the difference between a Container and a Virtual Machine?"
 
@@ -582,31 +552,75 @@ The inspection popover displays:
 
 ---
 
+### Q16: "What is Kubernetes Server-Side Apply (SSA) and why do field conflicts occur on `.spec.replicas`?"
+
+> **Answer**: Server-Side Apply (introduced in K8s v1.18+) tracks *field managers* for each property in an object's metadata. If an external client (like our Python client `python-httpx` via `/api/v1/infrastructure/scale`) sets `.spec.replicas = 4`, the Kubernetes API marks `python-httpx` as the manager of that field.
+> When Helm later runs `helm upgrade --install`, it attempts to manage `.spec.replicas` based on `values.yaml` (`replicas: 2`). Because two different managers claim ownership, Kubernetes rejects the apply with:
+> `conflict occurred while applying object: Apply failed with 1 conflict: conflict with "python-httpx" using apps/v1: .spec.replicas`.
+> To resolve this in CI/CD, we pass `--force-conflicts` to Helm, which explicitly transfers field ownership to Helm.
+
+---
+
+### Q17: "How do you handle multi-pod state consistency without Redis in a microservices cluster?"
+
+> **Answer**: In a microservice cluster without an external datastore (like Redis or PostgreSQL), state stored in Python process memory (e.g. active experiment runtime, sliding window histograms) is isolated per pod replica.
+> If an operator's browser sends an experiment start command to Pod A, subsequent polling requests routed by standard round-robin iptables rules might hit Pod B, which returns 404 Not Found.
+> We solve this through a two-layer defense:
+> 1. **Kubernetes Layer (`sessionAffinity: ClientIP`)**: Configured on `Service` with `timeoutSeconds: 10800` (3 hours). `kube-proxy` binds the client IP to the same backend pod.
+> 2. **Client-Side HUD Layer (Fallback Completion Timer)**: The frontend tracks the scenario duration (`duration_seconds + 1.5s`). Even if multi-pod network jitter causes an intermittent missing status tick, the client-side fallback timer guarantees the HUD popover gracefully completes and collects final telemetry metrics.
+
+---
+
+### Q18: "How do you design an alert engine to prevent alert fatigue and notification flapping?"
+
+> **Answer**: Alert fatigue happens when on-call engineers receive repetitive or false notifications. In `SlackAlerter`, we implemented:
+> 1. **Debounce Cooldown Timer (60s)**: Once an incident alert fires, repeated incident notifications are throttled so SRE channels are not flooded while engineers troubleshoot.
+> 2. **Multi-Cycle Resolution Debounce (Flapping Prevention)**: When metrics oscillate near the threshold (e.g. error rate jumping between 4.8% and 5.2%), an alert engine could fire alternating alert/resolved notifications every 3 seconds. We require **2 consecutive healthy cycles** before an auto-resolution card is dispatched.
+> 3. **Thread Safety via `threading.RLock`**: Ensures that concurrent async pollers cannot interleave state transitions and corrupt the firing state machine.
+
+---
+
+### Q19: "Why can't you calculate P95 latency directly from an average of response times?"
+
+> **Answer**: Averages hide extreme outliers! If 99 requests take 5ms and 1 request takes 10,000ms (10 seconds), the average is ~104ms. This falsely suggests that overall performance is acceptable, while 1 in 100 users had a catastrophic 10-second freeze.
+> Percentiles measure ordinal distributions: P95 tells you the threshold below which 95% of your users fall. To compute P95 across distributed pods, each server must record durations into discrete logarithmic buckets (`le="0.005"`, `le="0.010"`, `le="0.025"`, etc.). Prometheus aggregates the raw bucket counts across all pods using `sum(...) by (le)` and performs linear interpolation using `histogram_quantile(0.95, ...)`.
+
+---
+
+### Q20: "What is GitHub Push Protection and how does it catch secrets before they enter the repository?"
+
+> **Answer**: GitHub Push Protection is a client-server pre-receive Git hook. When a developer runs `git push`, GitHub scans all commits in the push range using high-entropy regex pattern matching against known credential schemas (AWS keys, Slack webhooks, GitHub tokens, Private SSH keys).
+> If a pattern matches (such as a Slack webhook matching `https://hooks.slack.com/services/T.../B.../<24-chars>`), GitHub rejects the push at the remote hook level *before* refs are updated.
+> Because Git history is immutable, simply adding a new commit that deletes the secret does not work; the offending commit is still in the history being pushed. You must either `git commit --amend` / `git reset --soft` to rewrite the commit, or access GitHub's security unblock URL to verify it as a false positive.
+
+---
+
+### Q21: "How does OpenTelemetry contextual propagation work across async boundaries?"
+
+> **Answer**: OpenTelemetry uses the W3C `traceparent` specification (`version-trace_id-parent_id-trace_flags`, e.g. `00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01`).
+> In FastAPI:
+> 1. The root HTTP middleware inspects incoming HTTP headers for `traceparent`. If absent, it generates a fresh 128-bit `trace_id`.
+> 2. When creating child spans during async coroutines or background tasks, OpenTelemetry uses Python `contextvars` to propagate the active trace context without requiring global locks.
+> 3. Outgoing HTTP requests (via `httpx`) inject `traceparent` and `X-Trace-Id` headers so downstream services or microservices join the same distributed trace graph.
+
+---
+
+### Q22: "What is the difference between Horizontal Pod Autoscaling (HPA) and Cluster Autoscaling (CA) on AWS EKS?"
+
+> **Answer**:
+> - **HPA (Horizontal Pod Autoscaler)** operates at the **pod level**. It queries the Kubernetes Metrics Server or Prometheus Adapter every 15s. If average CPU utilization exceeds 70%, it increases `.spec.replicas` on the Deployment (e.g. from 2 to 10 pods).
+> - **CA (Cluster Autoscaler / Karpenter)** operates at the **node / EC2 level**. If HPA scales up replicas but existing worker nodes have insufficient CPU or memory to schedule the new pods, those pods enter `Pending` state. The Cluster Autoscaler detects `Pending` pods with `FailedScheduling` events and calls AWS EC2 Auto Scaling API or Karpenter launch templates to provision fresh EC2 instances.
+> - In high-density environments, you must use `/20` subnets (4,096 IPs) with AWS VPC CNI to prevent IP exhaustion when both HPA and CA scale aggressively.
+
+---
+
 ---
 
 ## 9. Chapter 8: Kubernetes Networking & The Packet Journey (How Traffic Actually Moves)
 
 If a Senior Systems Engineer asks you: _"What happens under the hood when a user clicks 'Probe Target' in the browser?"_, this is the exact flow you walk them through:
 
-```mermaid
-flowchart LR
-    Browser["🖥️ Browser<br/><b>localhost:30080</b>"] -->|Host Port NAT| DockerBridge["Docker Bridge Network<br/>(Kind Control Plane)"]
-    DockerBridge -->|iptables KUBE-NODEPORTS| NodePort["NodePort Service :30080"]
-    NodePort -->|Kube-Proxy NAT| NginxPod["Nginx Pod<br/>10.244.0.19:80"]
-    NginxPod -->|proxy_pass http://simianx-backend:8000| CoreDNS["CoreDNS Lookup<br/><code>simianx-backend.simianx.svc</code>"]
-    CoreDNS -->|Resolves Virtual ClusterIP| ClusterIP["ClusterIP: 10.96.x.x"]
-    ClusterIP -->|Probabilistic iptables rule| BackendPod["FastAPI Backend Pod<br/>10.244.0.2:8000"]
-
-    classDef host fill:#f8fafc,stroke:#94a3b8,stroke-width:1.5px,color:#0f172a;
-    classDef edge fill:#eff6ff,stroke:#3b82f6,stroke-width:1.5px,color:#1e40af;
-    classDef svc fill:#f0fdf4,stroke:#22c55e,stroke-width:1.5px,color:#166534;
-    classDef pod fill:#faf5ff,stroke:#a855f7,stroke-width:1.5px,color:#6b21a8;
-
-    class Browser,DockerBridge host;
-    class NodePort,NginxPod edge;
-    class CoreDNS,ClusterIP svc;
-    class BackendPod pod;
-```
+![SimianX Kubernetes Networking & Packet Journey](screenshots/simianx_kubernetes_packet_journey.svg)
 
 ### The 4 Networking Concepts Interviewers Will Test You On:
 

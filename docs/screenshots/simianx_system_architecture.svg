@@ -1,0 +1,338 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1320 860" width="100%" height="100%">
+  <defs>
+    <!-- Dark Gradients & Filters -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0a0c13"/>
+      <stop offset="50%" stop-color="#0d101a"/>
+      <stop offset="100%" stop-color="#080a10"/>
+    </linearGradient>
+    <linearGradient id="panelGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#121622"/>
+      <stop offset="100%" stop-color="#0e111a"/>
+    </linearGradient>
+    <linearGradient id="cardGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#181d2a"/>
+      <stop offset="100%" stop-color="#121520"/>
+    </linearGradient>
+    <linearGradient id="innerCard" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1b2130"/>
+      <stop offset="100%" stop-color="#141824"/>
+    </linearGradient>
+
+    <!-- Markers -->
+    <marker id="arr-gray" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#64748b"/>
+    </marker>
+    <marker id="arr-blue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#38bdf8"/>
+    </marker>
+    <marker id="arr-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#34c759"/>
+    </marker>
+    <marker id="arr-amber" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#f59e0b"/>
+    </marker>
+    <marker id="arr-purple" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#a855f7"/>
+    </marker>
+  </defs>
+
+  <style>
+    .title { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", "Segoe UI", sans-serif; font-size: 21px; font-weight: 700; fill: #f8fafc; letter-spacing: -0.01em; }
+    .subtitle { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Segoe UI", sans-serif; font-size: 12px; font-weight: 500; fill: #64748b; }
+    .header { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+    .node-title { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", sans-serif; font-size: 13px; font-weight: 600; fill: #f1f5f9; }
+    .node-desc { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", sans-serif; font-size: 11px; font-weight: 400; fill: #94a3b8; }
+    .node-code { font-family: "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace; font-size: 10.5px; fill: #cbd5e1; }
+    .tag { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif; font-size: 9.5px; font-weight: 700; letter-spacing: 0.04em; }
+    .edge-label { font-family: "SF Mono", "JetBrains Mono", monospace; font-size: 10px; font-weight: 600; }
+  </style>
+
+  <!-- Canvas Background -->
+  <rect width="1320" height="860" rx="16" fill="url(#bgGrad)"/>
+  <rect x="1" y="1" width="1318" height="858" rx="15" fill="none" stroke="#1f2535" stroke-width="1.5"/>
+
+  <!-- Top Title Bar -->
+  <g transform="translate(40, 36)">
+    <circle cx="12" cy="12" r="11" fill="#0071e3" fill-opacity="0.18"/>
+    <circle cx="12" cy="12" r="5" fill="#0071e3"/>
+    <text x="34" y="17" class="title">SimianX · Cloud-Native SRE Resilience &amp; GitOps Architecture</text>
+    <text x="34" y="36" class="subtitle">Multi-AZ AWS EKS v1.31 · High-Density /20 Subnets · Jenkins CI &amp; ArgoCD GitOps · OpenTelemetry Tracing &amp; Prometheus Telemetry</text>
+  </g>
+
+  <!-- ========================================================================================= -->
+  <!-- TIER 1: CONTINUOUS DELIVERY & GITOPS (LEFT)                                                -->
+  <!-- ========================================================================================= -->
+  <g transform="translate(40, 95)">
+    <!-- Container Box -->
+    <rect width="360" height="725" rx="14" fill="url(#panelGrad)" stroke="#222838" stroke-width="1.2"/>
+    <rect x="0" y="0" width="360" height="38" rx="14" fill="#141824"/>
+    <path d="M 0 38 L 360 38" stroke="#222838" stroke-width="1"/>
+    <circle cx="20" cy="19" r="4" fill="#8b5cf6"/>
+    <text x="34" y="23" class="header" fill="#c084fc">1. Continuous Delivery &amp; GitOps</text>
+
+    <!-- Node 1: Developer Push (y=56..120) -->
+    <g transform="translate(20, 56)">
+      <rect width="320" height="64" rx="10" fill="url(#cardGrad)" stroke="#2a3144" stroke-width="1"/>
+      <rect x="0" y="0" width="4" height="64" rx="2" fill="#8b5cf6"/>
+      <text x="18" y="26" class="node-title">Developer Git Commit &amp; PR</text>
+      <text x="18" y="44" class="node-desc">Feature branch push to GitHub repository</text>
+      <text x="246" y="24" class="tag" fill="#a855f7">GIT PUSH</text>
+    </g>
+
+    <!-- Node 2: GitHub Actions PR Gatekeeper (y=142..230) -->
+    <g transform="translate(20, 142)">
+      <rect width="320" height="88" rx="10" fill="url(#cardGrad)" stroke="#2a3144" stroke-width="1"/>
+      <rect x="0" y="0" width="4" height="88" rx="2" fill="#0071e3"/>
+      <text x="18" y="24" class="node-title">GitHub Actions · PR Gatekeeper</text>
+      <text x="18" y="44" class="node-code">• Pytest Suite: 35 Unit &amp; Integration Tests</text>
+      <text x="18" y="60" class="node-code">• Ruff Python Linter &amp; PEP 8 Quality Gate</text>
+      <text x="18" y="76" class="node-code">• Vite React 19 Build &amp; Helm Template Lint</text>
+      <text x="246" y="24" class="tag" fill="#38bdf8">CI GATE</text>
+    </g>
+
+    <!-- Node 3: Jenkins Enterprise CI (y=252..350) -->
+    <g transform="translate(20, 252)">
+      <rect width="320" height="98" rx="10" fill="url(#cardGrad)" stroke="#2a3144" stroke-width="1"/>
+      <rect x="0" y="0" width="4" height="98" rx="2" fill="#f59e0b"/>
+      <text x="18" y="24" class="node-title">Enterprise CI Pipeline (Jenkins)</text>
+      <text x="18" y="44" class="node-desc">Automated declarative pipeline on PR merge:</text>
+      <text x="18" y="62" class="node-code">• Trivy CVE Container Security Scanner</text>
+      <text x="18" y="78" class="node-code">• Build Immutable Docker Images (v{BUILD})</text>
+      <text x="250" y="24" class="tag" fill="#fb923c">RELEASE</text>
+    </g>
+
+    <!-- Node 4: AWS ECR (y=372..446) -->
+    <g transform="translate(20, 372)">
+      <rect width="320" height="74" rx="10" fill="url(#cardGrad)" stroke="#2a3144" stroke-width="1"/>
+      <rect x="0" y="0" width="4" height="74" rx="2" fill="#f59e0b"/>
+      <text x="18" y="26" class="node-title">AWS ECR · Container Registry</text>
+      <text x="18" y="44" class="node-desc">Private encrypted repository (AES-256)</text>
+      <text x="18" y="60" class="node-code">simianx-backend:tag · simianx-frontend:tag</text>
+      <text x="248" y="24" class="tag" fill="#f59e0b">REGISTRY</text>
+    </g>
+
+    <!-- Node 5: GitOps Manifest Repo (y=468..550) -->
+    <g transform="translate(20, 468)">
+      <rect width="320" height="82" rx="10" fill="url(#cardGrad)" stroke="#2a3144" stroke-width="1"/>
+      <rect x="0" y="0" width="4" height="82" rx="2" fill="#8b5cf6"/>
+      <text x="18" y="26" class="node-title">GitOps Repository (Helm Values)</text>
+      <text x="18" y="44" class="node-desc">Automated commit updates image tag in:</text>
+      <text x="18" y="62" class="node-code">helm/simianx/values-dev.yaml (or values-prod)</text>
+      <text x="246" y="24" class="tag" fill="#c084fc">MANIFEST</text>
+    </g>
+
+    <!-- Node 6: ArgoCD Controller (y=572..674) -->
+    <g transform="translate(20, 572)">
+      <rect width="320" height="102" rx="10" fill="url(#cardGrad)" stroke="#2a3144" stroke-width="1"/>
+      <rect x="0" y="0" width="4" height="102" rx="2" fill="#10b981"/>
+      <text x="18" y="26" class="node-title">ArgoCD · In-Cluster GitOps Engine</text>
+      <text x="18" y="46" class="node-desc">Continuous declarative state reconciliation:</text>
+      <text x="18" y="64" class="node-code">• Out-of-Sync &amp; Drift Auto-Correction</text>
+      <text x="18" y="80" class="node-code">• Zero-Downtime Rolling Update Strategy</text>
+      <text x="252" y="24" class="tag" fill="#34c759">GITOPS</text>
+    </g>
+
+    <!-- Vertical Connectors inside Tier 1 (Center x = 180) -->
+    <path d="M 180 120 L 180 142" stroke="#8b5cf6" stroke-width="1.5" marker-end="url(#arr-gray)"/>
+    <path d="M 180 230 L 180 252" stroke="#38bdf8" stroke-width="1.5" marker-end="url(#arr-blue)"/>
+    <path d="M 180 350 L 180 372" stroke="#f59e0b" stroke-width="1.5" marker-end="url(#arr-amber)"/>
+    <path d="M 180 446 L 180 468" stroke="#8b5cf6" stroke-width="1.5" marker-end="url(#arr-purple)"/>
+    <path d="M 180 550 L 180 572" stroke="#10b981" stroke-width="1.5" marker-end="url(#arr-green)"/>
+  </g>
+
+  <!-- ========================================================================================= -->
+  <!-- TIER 2: GLOBAL EDGE & SECURE INGRESS (CENTER)                                             -->
+  <!-- ========================================================================================= -->
+  <g transform="translate(424, 95)">
+    <!-- Container Box -->
+    <rect width="254" height="490" rx="14" fill="url(#panelGrad)" stroke="#222838" stroke-width="1.2"/>
+    <rect x="0" y="0" width="254" height="38" rx="14" fill="#141824"/>
+    <path d="M 0 38 L 254 38" stroke="#222838" stroke-width="1"/>
+    <circle cx="20" cy="19" r="4" fill="#0071e3"/>
+    <text x="34" y="23" class="header" fill="#38bdf8">2. Edge &amp; Ingress</text>
+
+    <!-- Node 1: CloudFront CDN + WAF (y=56..196) -->
+    <g transform="translate(16, 56)">
+      <rect width="222" height="140" rx="10" fill="url(#cardGrad)" stroke="#2a3144" stroke-width="1"/>
+      <rect x="0" y="0" width="4" height="140" rx="2" fill="#0071e3"/>
+      <text x="14" y="24" class="node-title">AWS CloudFront CDN</text>
+      <text x="14" y="42" class="node-desc">+ AWS WAFv2 Web ACL</text>
+      <path d="M 14 52 L 208 52" stroke="#232838" stroke-width="1"/>
+      <text x="14" y="68" class="node-code">• Rate Limit: 2k req/5min</text>
+      <text x="14" y="84" class="node-code">• OWASP Top 10 Rules</text>
+      <text x="14" y="100" class="node-code">• Known Bad Inputs Guard</text>
+      <text x="14" y="116" class="node-code">• Single-Domain /api Proxy</text>
+      <text x="156" y="24" class="tag" fill="#38bdf8">EDGE WAF</text>
+    </g>
+
+    <!-- Node 2: S3 Static SPA Bucket (y=216..310) -->
+    <g transform="translate(16, 216)">
+      <rect width="222" height="94" rx="10" fill="url(#cardGrad)" stroke="#2a3144" stroke-width="1"/>
+      <rect x="0" y="0" width="4" height="94" rx="2" fill="#f59e0b"/>
+      <text x="14" y="24" class="node-title">AWS S3 · Frontend Bucket</text>
+      <text x="14" y="42" class="node-desc">Origin Access Control (OAC)</text>
+      <text x="14" y="62" class="node-code">• React 19 SPA static dist/</text>
+      <text x="14" y="78" class="node-code">• Direct S3 access blocked</text>
+      <text x="162" y="24" class="tag" fill="#fb923c">S3 (OAC)</text>
+    </g>
+
+    <!-- Node 3: AWS ALB (y=330..460) -->
+    <g transform="translate(16, 330)">
+      <rect width="222" height="130" rx="10" fill="url(#cardGrad)" stroke="#2a3144" stroke-width="1"/>
+      <rect x="0" y="0" width="4" height="130" rx="2" fill="#10b981"/>
+      <text x="14" y="24" class="node-title">AWS ALB · Load Balancer</text>
+      <text x="14" y="42" class="node-desc">Multi-AZ Public Subnets (/24)</text>
+      <path d="M 14 52 L 208 52" stroke="#232838" stroke-width="1"/>
+      <text x="14" y="68" class="node-code">• Path: /api/v1/* → API</text>
+      <text x="14" y="84" class="node-code">• TargetGroup Health Check</text>
+      <text x="14" y="100" class="node-code">• Auto-Discovers NodePorts</text>
+      <text x="14" y="116" class="node-code">• SSL/TLS Termination (:443)</text>
+      <text x="156" y="24" class="tag" fill="#34c759">ALB INGRESS</text>
+    </g>
+
+    <!-- Connectors inside Tier 2 -->
+    <!-- CloudFront -> S3 -->
+    <path d="M 127 196 L 127 216" stroke="#38bdf8" stroke-width="1.5" marker-end="url(#arr-blue)"/>
+    <!-- CloudFront -> ALB -->
+    <path d="M 60 196 L 60 330" stroke="#38bdf8" stroke-width="1.5" stroke-dasharray="3,3" marker-end="url(#arr-blue)"/>
+  </g>
+
+  <!-- ========================================================================================= -->
+  <!-- TIER 3: AWS EKS MULTI-AZ WORKLOAD & SRE TELEMETRY TIER (RIGHT)                             -->
+  <!-- ========================================================================================= -->
+  <g transform="translate(702, 95)">
+    <!-- Container Box -->
+    <rect width="578" height="725" rx="14" fill="url(#panelGrad)" stroke="#222838" stroke-width="1.2"/>
+    <rect x="0" y="0" width="578" height="38" rx="14" fill="#141824"/>
+    <path d="M 0 38 L 578 38" stroke="#222838" stroke-width="1"/>
+    <circle cx="20" cy="19" r="4" fill="#10b981"/>
+    <text x="34" y="23" class="header" fill="#34c759">3. AWS EKS Multi-AZ Cluster (ap-south-1) · /20 High-Density Subnets</text>
+
+    <!-- Subgraph 1: Frontend Workload (y=56..150) -->
+    <g transform="translate(20, 56)">
+      <rect width="538" height="92" rx="10" fill="url(#cardGrad)" stroke="#2b3245" stroke-width="1"/>
+      <text x="18" y="24" class="node-title">SimianX Frontend Cockpit Pods (React 19 + Nginx)</text>
+      <text x="18" y="42" class="node-desc">High-Performance Apple HIG Dashboard with Zero Layout Shifts</text>
+      <g transform="translate(18, 52)">
+        <rect width="156" height="26" rx="6" fill="#161a26" stroke="#333b52" stroke-width="1"/>
+        <text x="10" y="17" class="node-code">Activity Rings (RPS)</text>
+      </g>
+      <g transform="translate(188, 52)">
+        <rect width="162" height="26" rx="6" fill="#161a26" stroke="#333b52" stroke-width="1"/>
+        <text x="10" y="17" class="node-code">OTel Trace Waterfall</text>
+      </g>
+      <g transform="translate(364, 52)">
+        <rect width="156" height="26" rx="6" fill="#161a26" stroke="#333b52" stroke-width="1"/>
+        <text x="10" y="17" class="node-code">Live Terminal Logs</text>
+      </g>
+    </g>
+
+    <!-- Subgraph 2: Kubernetes Service with Session Affinity (y=162..222) -->
+    <g transform="translate(20, 162)">
+      <rect width="538" height="58" rx="10" fill="url(#cardGrad)" stroke="#2b3245" stroke-width="1"/>
+      <rect x="0" y="0" width="4" height="58" rx="2" fill="#0071e3"/>
+      <text x="18" y="24" class="node-title">K8s Service: simianx-backend (:8000)</text>
+      <text x="18" y="42" class="node-code">sessionAffinity: ClientIP (timeout: 10800s) · Prevents multi-replica race</text>
+      <text x="410" y="24" class="tag" fill="#38bdf8">CLIENT-IP STICKY</text>
+    </g>
+
+    <!-- Subgraph 3: Backend Pod Fleet (Microservice Core) (y=234..486) -->
+    <g transform="translate(20, 234)">
+      <rect width="538" height="252" rx="10" fill="url(#cardGrad)" stroke="#2b3245" stroke-width="1"/>
+      <text x="18" y="24" class="node-title">SimianX Backend Pod Fleet (FastAPI SRE Engine)</text>
+      <text x="18" y="42" class="node-desc">Replicas: 2-10 (Auto-Scaled) · Resource Limits: 500m CPU / 512Mi RAM</text>
+
+      <!-- Internal Box A: Chaos Simulator -->
+      <g transform="translate(18, 54)">
+        <rect width="242" height="88" rx="8" fill="url(#innerCard)" stroke="#31394e" stroke-width="1"/>
+        <text x="12" y="22" class="node-title" font-size="12px">Chaos Workload Engine</text>
+        <text x="12" y="40" class="node-code">• Traffic Burst (10-50 RPS)</text>
+        <text x="12" y="56" class="node-code">• Injected Latency (P95 SLA)</text>
+        <text x="12" y="72" class="node-code">• Cascading 5xx Faults</text>
+      </g>
+
+      <!-- Internal Box B: OpenTelemetry SDK -->
+      <g transform="translate(278, 54)">
+        <rect width="242" height="88" rx="8" fill="url(#innerCard)" stroke="#31394e" stroke-width="1"/>
+        <text x="12" y="22" class="node-title" font-size="12px">OpenTelemetry SDK</text>
+        <text x="12" y="40" class="node-code">• W3C traceparent Context</text>
+        <text x="12" y="56" class="node-code">• 200 Trace Ring Buffer</text>
+        <text x="12" y="72" class="node-code">• Parent-Child Span Graph</text>
+      </g>
+
+      <!-- Internal Box C: Sliding-Window Metrics -->
+      <g transform="translate(18, 150)">
+        <rect width="242" height="88" rx="8" fill="url(#innerCard)" stroke="#31394e" stroke-width="1"/>
+        <text x="12" y="22" class="node-title" font-size="12px">MetricsCollector (10s Window)</text>
+        <text x="12" y="40" class="node-code">• High-precision time.perf_counter</text>
+        <text x="12" y="56" class="node-code">• P50, P90, P95, P99 Quantiles</text>
+        <text x="12" y="72" class="node-code">• Window Error Rate &amp; RPS</text>
+      </g>
+
+      <!-- Internal Box D: SlackAlerter Background Engine -->
+      <g transform="translate(278, 150)">
+        <rect width="242" height="88" rx="8" fill="url(#innerCard)" stroke="#31394e" stroke-width="1"/>
+        <text x="12" y="22" class="node-title" font-size="12px">SlackAlerter (Lifespan Loop)</text>
+        <text x="12" y="40" class="node-code">• Thread-Safe RLock State</text>
+        <text x="12" y="56" class="node-code">• 3.0s Continuous Evaluation</text>
+        <text x="12" y="72" class="node-code">• Anti-Flapping Auto-Recovery</text>
+      </g>
+    </g>
+
+    <!-- Subgraph 4: Dual Observability Tier (Bottom Row, y=500..705) -->
+    <!-- Left: Prometheus TSDB -->
+    <g transform="translate(20, 500)">
+      <rect width="260" height="205" rx="10" fill="url(#cardGrad)" stroke="#2b3245" stroke-width="1"/>
+      <rect x="0" y="0" width="4" height="205" rx="2" fill="#f59e0b"/>
+      <text x="16" y="24" class="node-title">Prometheus TSDB (:9090)</text>
+      <text x="16" y="42" class="node-desc">In-Cluster TSDB with Pod Discovery</text>
+      <path d="M 16 52 L 244 52" stroke="#232838" stroke-width="1"/>
+      <text x="16" y="70" class="node-code">• Scrapes GET /metrics (2s loop)</text>
+      <text x="16" y="88" class="node-code">• histogram_quantile(0.95, ...)</text>
+      <text x="16" y="106" class="node-code">• Dynamic Pod Annotation Scrape</text>
+      <text x="16" y="124" class="node-code">• Dual-layer Client Fallback</text>
+      <text x="16" y="142" class="node-code">• Real-time PromQL API Provider</text>
+      <text x="16" y="160" class="node-code">• Zero External Agent Overhead</text>
+      <text x="178" y="24" class="tag" fill="#f59e0b">PROMETHEUS</text>
+    </g>
+
+    <!-- Right: Slack Incident Response -->
+    <g transform="translate(298, 500)">
+      <rect width="260" height="205" rx="10" fill="url(#cardGrad)" stroke="#2b3245" stroke-width="1"/>
+      <rect x="0" y="0" width="4" height="205" rx="2" fill="#8b5cf6"/>
+      <text x="16" y="24" class="node-title">Slack Incident Alerts</text>
+      <text x="16" y="42" class="node-desc">#sre-alerts Channel Webhook</text>
+      <path d="M 16 52 L 244 52" stroke="#232838" stroke-width="1"/>
+      <text x="16" y="70" class="node-code">• Critical: Err Rate &gt; 5.0%</text>
+      <text x="16" y="88" class="node-code">• Warning: P95 Latency &gt; 250ms</text>
+      <text x="16" y="106" class="node-code">• 60-second Debounce Cooldown</text>
+      <text x="16" y="124" class="node-code">• 2-Cycle Flapping Auto-Resolution</text>
+      <text x="16" y="142" class="node-code">• Rich Block Kit Formatting</text>
+      <text x="16" y="160" class="node-code">• Microsecond Incident Timestamps</text>
+      <text x="190" y="24" class="tag" fill="#c084fc">SLACK SRE</text>
+    </g>
+  </g>
+
+  <!-- ========================================================================================= -->
+  <!-- CROSS-TIER CONNECTORS & LABELS                                                             -->
+  <!-- ========================================================================================= -->
+
+  <!-- ALB Ingress (Tier 2) -> K8s Service / Frontend (Tier 3) -->
+  <path d="M 646 450 L 702 450" stroke="#34c759" stroke-width="1.5" marker-end="url(#arr-green)"/>
+  <rect x="654" y="438" width="40" height="20" rx="4" fill="#10131d" stroke="#243046" stroke-width="1"/>
+  <text x="659" y="452" class="edge-label" fill="#34c759">ROUTE</text>
+
+  <!-- ArgoCD (Tier 1) -> Kubernetes Cluster (Tier 3) Reconciliation -->
+  <!-- Clean horizontal route beneath Tier 2 (y = 718) -->
+  <path d="M 400 718 L 702 718" stroke="#10b981" stroke-width="1.8" stroke-dasharray="4,4" marker-end="url(#arr-green)"/>
+  <rect x="470" y="706" width="180" height="24" rx="5" fill="#0d1017" stroke="#1e2c22" stroke-width="1.2"/>
+  <text x="478" y="722" class="edge-label" fill="#34c759">GitOps Reconcile &amp; Auto-Heal</text>
+
+  <!-- Backend Pods (Tier 3) -> Prometheus (Tier 3) Scrape Loop -->
+  <path d="M 850 486 L 850 500" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="3,3" marker-end="url(#arr-amber)"/>
+
+  <!-- SlackAlerter (Tier 3) -> Slack Alerts Box -->
+  <path d="M 1120 486 L 1120 500" stroke="#8b5cf6" stroke-width="1.5" marker-end="url(#arr-purple)"/>
+
+</svg>
