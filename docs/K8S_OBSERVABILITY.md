@@ -72,6 +72,8 @@ flowchart TD
 
 Below is the complete end-to-end data pipeline showing how traffic flows from clients and chaos injectors through OpenTelemetry tracing, in-memory sliding-window metrics, Prometheus dynamic Kubernetes scraping, and the React 19 Cockpit:
 
+![SimianX Observability Architecture](screenshots/simianx_observability_architecture.png)
+
 ```mermaid
 flowchart TD
     subgraph Client["Traffic Sources"]
@@ -263,7 +265,89 @@ clamp_min(sum(rate(simianx_http_requests_total{status_code=~"5.."}[15s])) / sum(
 
 ---
 
-## 4. Manual Horizontal Scaling (2 to 10 Replicas)
+## 4. Production-Level Slack Incident Alerting Engine
+
+SimianX includes a native, thread-safe alerting engine (`SlackAlerter`) that continuously monitors telemetry health and dispatches actionable Slack notifications when the system experiences degraded performance or chaos-induced faults.
+
+### Alerting Pipeline Architecture
+
+```mermaid
+flowchart LR
+    Telemetry["FastAPI Lifespan Loop<br/>(Every 3.0s Evaluation)"] --> Alerter["SlackAlerter Service<br/>• Thread-Safe RLock<br/>• 30s Debounce Cooldown<br/>• Flapping Prevention"]
+    
+    Alerter --> Conditions{"Bad Condition<br/>Check"}
+    
+    Conditions -->|Error Rate > 5%| Critical["🚨 Incident: CRITICAL<br/>Color: #dc2626<br/>Slack Block Kit Card"]
+    Conditions -->|P95 > 250ms| Warning["⚠️ Incident: WARNING<br/>Color: #f59e0b<br/>Slack Block Kit Card"]
+    Conditions -->|Chaos Fault Injection| Warning
+    Conditions -->|2x Healthy Cycles| Resolved["✅ Incident: RESOLVED<br/>Color: #16a34a<br/>Auto-Healing Notice"]
+
+    Critical --> Webhook["Slack Incoming Webhook<br/>(POST JSON)"]
+    Warning --> Webhook
+    Resolved --> Webhook
+    Webhook --> Channel["#sre-alerts Channel"]
+
+    classDef trigger fill:#fee2e2,stroke:#ef4444,stroke-width:1.5px,color:#991b1b;
+    classDef warn fill:#fef3c7,stroke:#f59e0b,stroke-width:1.5px,color:#92400e;
+    classDef ok fill:#dcfce7,stroke:#22c55e,stroke-width:1.5px,color:#166534;
+    classDef base fill:#f8fafc,stroke:#94a3b8,stroke-width:1.5px,color:#0f172a;
+
+    class Critical trigger;
+    class Warning warn;
+    class Resolved ok;
+    class Telemetry,Alerter,Conditions,Webhook,Channel base;
+```
+
+### 1. Monitored Bad Conditions & Thresholds
+
+| Condition | Threshold | Severity | Description |
+| :--- | :--- | :--- | :--- |
+| **High Error Rate** | `error_rate > 5.0%` | **CRITICAL** (`#dc2626`) | 5xx response surge exceeding the reliability budget |
+| **High P95 Latency** | `p95_latency > 250.0ms` | **WARNING** (`#f59e0b`) | Breaches acceptable tail-latency SLA under heavy load |
+| **Chaos Fault Injection** | Status `running` & `scenario != traffic_burst` | **WARNING** (`#f59e0b`) | Intentional fault injection experiment active (e.g. database delay) |
+| **System Healthy** | Error rate $\le 5\%$ & P95 $\le 250$ms | **RESOLVED** (`#16a34a`) | Requires 2 consecutive cycles to emit auto-recovery notice |
+
+### 2. Flapping Prevention & Anti-Spam Protections
+
+- **Debounce Cooldown (`ALERT_COOLDOWN_SECONDS = 30`)**: Once an alert triggers, repeated incident notifications are throttled so SRE channels are not flooded while troubleshooting.
+- **Flapping Suppression (`HEALTHY_CYCLES_TO_RESOLVE = 2`)**: Recovery alerts are only dispatched after two consecutive healthy polling cycles, preventing transient metric dips from firing premature resolution cards.
+- **Noise Isolation**: Admin telemetry routes (`/api/v1/alerts`, `/metrics`, `/live-logs`) are excluded from Prometheus counters and latency sliding windows.
+
+### 3. Slack Block Kit Card Format
+
+Incident cards contain rich contextual fields for immediate triage:
+- **Title & Badge**: Severity indicator (`🚨 SimianX Incident Alert`, `⚠️ Performance Warning`, `✅ Incident Resolved`)
+- **Telemetry Snapshot**: Real-time RPS, P95 latency (ms), Error Rate (%), Active Pod replicas
+- **Environment Context**: Kubernetes cluster name, pod identifier, timestamp
+- **Action Links**: Direct one-click deep link to SimianX UI Cockpit
+
+### 4. Configuration & API Endpoints
+
+Alerting can be configured via environment variables, Helm values, or directly at runtime via the SimianX Cockpit UI:
+
+#### Environment Variables & Helm
+```yaml
+# helm/simianx/values.yaml
+slackWebhookUrl: "https://hooks.slack.com/services/YOUR/WEBHOOK/URL"
+slackChannel: "#sre-alerts"
+slackAlertsEnabled: true
+```
+
+#### REST API Endpoints
+- `GET /api/v1/alerts/status`: Returns current configuration with masked webhook (`https://hooks.slack.com/...****`), active incident status, and firing state.
+- `POST /api/v1/alerts/config`: Dynamically updates webhook URL and destination channel without restarting the server.
+- `POST /api/v1/alerts/test`: Dispatches a formatted test notification card to verify end-to-end webhook connectivity.
+
+```bash
+# Test alert dispatch via cURL:
+curl -X POST http://localhost:8000/api/v1/alerts/test \
+  -H "Content-Type: application/json" \
+  -d '{"webhook_url": "https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK"}'
+```
+
+---
+
+## 5. Manual Horizontal Scaling (2 to 10 Replicas)
 
 ### CLI Scaling:
 ```bash
@@ -291,7 +375,7 @@ Returns:
 
 ---
 
-## 5. Running Automated Tests
+## 6. Running Automated Tests
 
 ```bash
 cd backend
@@ -299,15 +383,16 @@ source .venv/bin/activate
 ruff check app/ tests/
 pytest tests/ -v
 ```
-All 22 unit and integration tests validate:
+All 35 unit and integration tests validate:
 - Real non-mocked metric computation and histogram quantile math
+- Slack incident alerting, auto-recovery resolution cycles, and configuration APIs
 - Concurrent experiment prevention
 - `/metrics` OpenMetrics format output
 - `/api/v1/infrastructure` Kubernetes and Prometheus state extraction
 
 ---
 
-## 6. Environment Teardown & Cleanup
+## 7. Environment Teardown & Cleanup
 
 ### Option A: Remove SimianX Workloads (Keep Cluster)
 ```bash

@@ -221,4 +221,71 @@ export async function clearLiveLogs(): Promise<void> {
   })
 }
 
+export interface SlackAlertsStatus {
+  enabled: boolean
+  configured: boolean
+  webhook_masked: string | null
+  channel: string
+  cooldown_seconds: number
+  error_threshold_pct: number
+  latency_threshold_ms: number
+  is_firing: boolean
+  active_incident: {
+    type: string | null
+    duration_seconds: number
+    started_at: string | null
+  } | null
+  recent_alerts: Array<{
+    timestamp: string
+    type: string
+    severity: string
+    status: string
+    message: string
+  }>
+}
+
+export async function fetchAlertsStatus(): Promise<SlackAlertsStatus> {
+  const res = await fetch(`${BASE_URL}/api/v1/alerts/status`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+  })
+  if (!res.ok) {
+    throw new Error(`Failed to fetch alerts status: HTTP ${res.status}`)
+  }
+  return res.json()
+}
+
+export async function updateAlertsConfig(config: {
+  webhook_url?: string
+  channel?: string
+  enabled?: boolean
+  cooldown_seconds?: number
+  error_threshold_pct?: number
+  latency_threshold_ms?: number
+}): Promise<SlackAlertsStatus> {
+  const res = await fetch(`${BASE_URL}/api/v1/alerts/config`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(config),
+  })
+  if (!res.ok) {
+    throw new Error(`Failed to update alerts config: HTTP ${res.status}`)
+  }
+  return res.json()
+}
+
+export async function sendTestSlackAlert(webhook_url?: string): Promise<{ status: string; message: string }> {
+  const res = await fetch(`${BASE_URL}/api/v1/alerts/test`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ webhook_url }),
+  })
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}))
+    throw new Error(errorData.detail || `Slack test failed: HTTP ${res.status}`)
+  }
+  return res.json()
+}
+
+
 

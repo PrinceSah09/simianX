@@ -81,12 +81,14 @@ class MetricsCollector:
             # Cumulative calculations
             error_rate = round((errors / total) * 100, 2) if total > 0 else 0.0
 
-            # Determine service health based on error rate and latency
-            active_error_rate = window_error_rate if window_requests > 0 else error_rate
-            if active_error_rate > 15.0:
-                service_status = "unhealthy"
-            elif active_error_rate > 5.0 or (window_requests > 0 and p95 > 250.0):
-                service_status = "degraded"
+            # Determine service health based on active sliding window error rate and latency
+            if window_requests > 0:
+                if window_error_rate > 15.0:
+                    service_status = "unhealthy"
+                elif window_error_rate > 5.0 or p95 > 250.0:
+                    service_status = "degraded"
+                else:
+                    service_status = "healthy"
             else:
                 service_status = "healthy"
 

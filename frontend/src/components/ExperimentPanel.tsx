@@ -184,11 +184,8 @@ export const ExperimentPanel: React.FC<ExperimentPanelProps> = ({
         <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
           {/* Intensity Segmented Control */}
           <div>
-            <div className="mb-3 flex items-baseline justify-between">
+            <div className="mb-3">
               <p className="text-[14px] text-[#6e6e73]">Intensity</p>
-              <p className="text-[14px] text-[#1d1d1f]">
-                {intensityOptions.find((opt) => opt.id === intensity)?.rps}
-              </p>
             </div>
             <div className="flex h-[54px] items-center rounded-full bg-[#f5f5f7] p-1">
               {intensityOptions.map((opt) => {
@@ -223,9 +220,8 @@ export const ExperimentPanel: React.FC<ExperimentPanelProps> = ({
 
           {/* Apple-style Duration Control */}
           <div>
-            <div className="mb-3 flex items-baseline justify-between">
+            <div className="mb-3">
               <p className="text-[14px] text-[#6e6e73]">Duration</p>
-              <p className="text-[14px] text-[#1d1d1f]">{duration} seconds</p>
             </div>
             <div className="flex h-[54px] items-center rounded-full bg-[#f5f5f7] p-1">
               {[10, 15, 20, 25, 30].map((seconds) => {

@@ -83,7 +83,7 @@ export const InfrastructurePanel: React.FC<InfrastructurePanelProps> = ({ data, 
             <AnimatedNumber value={desired} />
           </h2>
           <p className="mt-1 text-[17px] text-[#6e6e73]">
-            pods ready in {data.namespace || "simianx"}
+            pods ready
           </p>
         </div>
 
@@ -210,8 +210,6 @@ export const InfrastructurePanel: React.FC<InfrastructurePanelProps> = ({ data, 
             <span className="font-medium text-[#1d1d1f]">
               {ready === desired ? `${ready} ready` : `${ready} of ${desired} ready`}
             </span>
-            <span className="text-black/20">·</span>
-            <span>{data.namespace || "simianx"}</span>
           </div>
         </div>
 

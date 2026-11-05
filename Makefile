@@ -69,8 +69,10 @@ kind-create: ## Create local Kind Kubernetes cluster from kind-config.yaml
 kind-up: kind-create docker-build ## Deploy SimianX Backend & Prometheus to local Kind cluster via Helm
 	@echo "==> Loading backend image into Kind cluster..."
 	kind load docker-image simianx-backend:latest --name simianx
+	@echo "==> Loading frontend image into Kind cluster..."
+	kind load docker-image simianx-frontend:latest --name simianx
 	@echo "==> Deploying backend services via Helm..."
-	helm upgrade --install simianx ./helm/simianx -n simianx --create-namespace
+	helm upgrade --install simianx ./helm/simianx -n simianx --create-namespace --force-conflicts
 
 kind-down: ## Uninstall Helm release from local Kind cluster
 	@echo "==> Tearing down SimianX release..."

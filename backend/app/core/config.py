@@ -23,6 +23,14 @@ class Settings(BaseSettings):
     otel_service_name: str = "simianx-backend"
     otlp_endpoint: str | None = None
 
+    # Slack Alerting
+    slack_webhook_url: str | None = None
+    slack_channel: str = "#sre-alerts"
+    slack_alerts_enabled: bool = True
+    alert_cooldown_seconds: int = 60
+    alert_error_threshold_pct: float = 5.0
+    alert_latency_threshold_ms: float = 250.0
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

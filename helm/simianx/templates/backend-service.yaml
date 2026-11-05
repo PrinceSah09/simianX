@@ -8,6 +8,10 @@ metadata:
     {{- include "simianx.labels" . | nindent 4 }}
 spec:
   type: {{ .Values.backend.service.type }}
+  sessionAffinity: ClientIP
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 10800
   selector:
     app: simianx-backend
   ports:
@@ -29,6 +33,10 @@ metadata:
     {{- include "simianx.labels" . | nindent 4 }}
 spec:
   type: ClusterIP
+  sessionAffinity: ClientIP
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 10800
   selector:
     app: simianx-backend
   ports:

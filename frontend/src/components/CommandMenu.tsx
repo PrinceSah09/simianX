@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react"
-import { Search, X, Zap, Radio, Terminal, Copy, Check, StopCircle } from "lucide-react"
+import { Search, X, Zap, Radio, Terminal, Copy, Check, StopCircle, Bell } from "lucide-react"
 
 interface CommandMenuProps {
   isOpen: boolean
@@ -9,6 +9,7 @@ interface CommandMenuProps {
   isExperimentRunning: boolean
   onOpenLogs?: () => void
   onPingTarget: () => void
+  onOpenSlackAlerts?: () => void
 }
 
 export const CommandMenu: React.FC<CommandMenuProps> = ({
@@ -19,6 +20,7 @@ export const CommandMenu: React.FC<CommandMenuProps> = ({
   isExperimentRunning,
   onOpenLogs,
   onPingTarget,
+  onOpenSlackAlerts,
 }) => {
   const [query, setQuery] = useState("")
   const [copied, setCopied] = useState(false)
@@ -56,7 +58,7 @@ export const CommandMenu: React.FC<CommandMenuProps> = ({
     matches("traffic burst") || matches("experiment") || matches("start") || matches("stop") || matches("gentle") || matches("nominal") || matches("maximum")
 
   const hasToolMatches =
-    matches("probe") || matches("logs") || matches("terminal") || matches("curl") || matches("metrics")
+    matches("probe") || matches("logs") || matches("terminal") || matches("curl") || matches("metrics") || matches("slack") || matches("alert") || matches("webhook")
 
   return (
     <div
@@ -222,6 +224,23 @@ export const CommandMenu: React.FC<CommandMenuProps> = ({
                     ) : (
                       <span className="text-[12px] font-mono text-[#86868b]">/metrics</span>
                     )}
+                  </button>
+                )}
+                {(matches("slack") || matches("alert") || matches("webhook") || matches("notify")) && onOpenSlackAlerts && (
+                  <button
+                    className={itemClass}
+                    onClick={() => {
+                      onOpenSlackAlerts()
+                      onClose()
+                    }}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Bell className="h-4 w-4 text-[#e01e5a]" />
+                      <span>Configure Slack alerts & webhook</span>
+                    </div>
+                    <span className="rounded bg-black/[0.05] px-1.5 py-0.5 font-mono text-[10.5px] text-[#6e6e73]">
+                      Slack
+                    </span>
                   </button>
                 )}
               </div>

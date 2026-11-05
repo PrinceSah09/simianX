@@ -90,8 +90,8 @@ export const TelemetryGauges: React.FC<TelemetryGaugesProps> = ({
 
           <ActivityRings
             size={210}
-            stroke={16}
-            gap={8}
+            stroke={15}
+            gap={7}
             rings={[
               { value: availabilityVal, max: 100, color: "#30d158" },
               { value: rpsVal, max: rpsMax, color: "#0071e3" },
@@ -99,14 +99,14 @@ export const TelemetryGauges: React.FC<TelemetryGaugesProps> = ({
             ]}
             center={
               <div className="flex flex-col items-center justify-center">
-                <p className="text-[38px] font-semibold leading-none tracking-[-0.04em] text-[#1d1d1f]">
+                <p className="text-[28px] font-semibold leading-none tracking-[-0.03em] text-[#1d1d1f]">
                   <AnimatedNumber
                     value={rpsVal}
                     decimals={1}
                     fallback="1.0"
                   />
                 </p>
-                <p className="mt-1 text-[12px] font-medium text-[#86868b]">
+                <p className="mt-1 text-[11px] font-medium text-[#86868b]">
                   req/s
                 </p>
               </div>
@@ -172,7 +172,7 @@ export const TelemetryGauges: React.FC<TelemetryGaugesProps> = ({
               : `${metrics?.window_errors ?? 0} failed in window`
           }
           value={isWindowIdle ? 0 : errorRateVal}
-          max={25}
+          max={100}
           color={errorColor}
         />
         <Donut

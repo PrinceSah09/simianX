@@ -41,6 +41,12 @@ spec:
               value: {{ .Values.backend.env.prometheusUrl | quote }}
             - name: OTLP_ENDPOINT
               value: {{ .Values.backend.env.otlpEndpoint | default "" | quote }}
+            - name: SLACK_WEBHOOK_URL
+              value: {{ .Values.backend.env.slackWebhookUrl | default "" | quote }}
+            - name: SLACK_CHANNEL
+              value: {{ .Values.backend.env.slackChannel | default "#sre-alerts" | quote }}
+            - name: SLACK_ALERTS_ENABLED
+              value: {{ .Values.backend.env.slackAlertsEnabled | default "true" | quote }}
             - name: POD_NAME
               valueFrom:
                 fieldRef:

@@ -27,6 +27,9 @@ backend:
     targetServiceUrl: "http://simianx-backend:8000"
     prometheusUrl: "http://prometheus:9090"
     otlpEndpoint: "http://alloy:4318/v1/traces"
+    slackWebhookUrl: ""
+    slackChannel: "#sre-alerts"
+    slackAlertsEnabled: "true"
 
 frontend:
   enabled: true

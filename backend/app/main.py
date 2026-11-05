@@ -1,20 +1,25 @@
 """FastAPI app — wires routes, logging, and settings together. No logic lives here."""
 
+import asyncio
 import logging
 import time
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from opentelemetry import trace
 from starlette.requests import Request
 from starlette.responses import Response
 
+from app.api.routes import alerts as alerts_router
 from app.api.routes import experiments as experiments_router
 from app.api.routes import health as health_router
 from app.api.routes import logs as logs_router
+from app.api.routes.experiments import get_experiment_service
 from app.core.config import settings
 from app.core.otel import setup_opentelemetry
 from app.core.prometheus import get_prometheus_metrics, record_prometheus_request
 from app.core.telemetry import metrics_collector
+from app.services.slack_alerter import slack_alerter
 
 # Configure logging once at startup.
 logging.basicConfig(
@@ -25,6 +30,34 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Background lifecycle task for continuous Slack incident evaluation."""
+    stop_event = asyncio.Event()
+
+    async def alert_monitor_loop():
+        logger.info("SimianX Slack Alert Monitor loop started.")
+        while not stop_event.is_set():
+            try:
+                snapshot = metrics_collector.get_snapshot()
+                active_exp = get_experiment_service().get_active_run_snapshot()
+                active_scenario = active_exp.get("scenario") if active_exp else None
+                await slack_alerter.evaluate_telemetry(snapshot, active_scenario=active_scenario)
+            except Exception as e:
+                logger.debug("Slack alert evaluation cycle: %s", e)
+
+            try:
+                await asyncio.wait_for(stop_event.wait(), timeout=3.0)
+            except TimeoutError:
+                pass
+
+    monitor_task = asyncio.create_task(alert_monitor_loop())
+    yield
+    stop_event.set()
+    monitor_task.cancel()
+
+
 app = FastAPI(
     title=settings.app_name,
     version=settings.app_version,
@@ -32,6 +65,7 @@ app = FastAPI(
     docs_url="/docs",  # Swagger UI
     redoc_url="/redoc",  # ReDoc
     openapi_url="/openapi.json",
+    lifespan=lifespan,
 )
 
 # Initialize OpenTelemetry instrumentation
@@ -62,6 +96,7 @@ async def record_telemetry_middleware(request: Request, call_next) -> Response:
         "/api/v1/infrastructure",
         "/api/v1/experiments",
         "/api/v1/chaos",
+        "/api/v1/alerts",
         "/docs",
         "/redoc",
         "/openapi.json",
@@ -87,6 +122,7 @@ async def record_telemetry_middleware(request: Request, call_next) -> Response:
 app.include_router(health_router.router)
 app.include_router(experiments_router.router)
 app.include_router(logs_router.router, prefix="/api/v1")
+app.include_router(alerts_router.router, prefix="/api/v1")
 
 
 @app.get("/metrics", include_in_schema=False)
